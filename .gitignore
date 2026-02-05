@@ -1,0 +1,7 @@
+.cert.crt
+.cert.key
+__pycache__/
+db.sqlite3
+media/
+staticfiles/
+venv/
