@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block content %}
+{% load dict_extra %}
+
+
+<h3 class="fw-bold mb-4">Welcome, {{ request.user.username }}</h3>
+
+<div class="row g-4">
+
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h2>{{ courses_count }}</h2>
+                <p class="text-muted">Courses Enrolled</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h2>{{ lessons_completed }}</h2>
+                <p class="text-muted">Lessons Completed</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h2>{{ quizzes_taken }}</h2>
+                <p class="text-muted">Quizzes Taken</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<hr class="my-4">
+
+
+<h5 class="fw-bold mb-3">My Courses</h5>
+
+{% for course in enrolled_courses %}
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+
+        <h6 class="fw-bold">
+            {{ course.title }}
+            <span class="badge bg-primary ms-2">Enrolled</span>
+        </h6>
+
+        <p class="small text-muted">Popular lessons</p>
+
+        <ul class="list-group list-group-flush">
+            {% for lesson in popular_lessons|get_item:course.id %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ lesson.title }}
+                <span class="badge bg-secondary">
+                    {{ lesson.views }} views
+                </span>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-muted">
+                No lessons yet.
+            </li>
+            {% endfor %}
+        </ul>
+
+        <a href="{% url 'courses:course_detail' course.slug course.id %}"
+           class="btn btn-sm btn-outline-primary mt-3 {% if popular_lessons|get_item:course.id|length == 0 %}disabled{% endif %}">
+            Continue Learning
+        </a>
+
+    </div>
+</div>
+{% empty %}
+<p class="text-muted">You are not enrolled in any course yet.</p>
+<a href="{%url 'courses:enroll_courses' %}" class="btn btn-outline-primary">Enroll in a Course</a>
+{% endfor %}
+
+
+<h5 class="fw-bold mb-3">Enroll in a Course</h5>
+
+<div class="row g-3 mb-4">
+    {% for course in available_courses %}
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h6 class="fw-bold">{{ course.title }}</h6>
+                <p class="small text-muted">{{ course.level }}</p>
+
+                <a href="{% url 'courses:enroll_course' course.id %}"
+                   class="btn btn-sm btn-success w-100">
+                    <i class="fas fa-plus"></i> Enroll
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-muted">You are enrolled in all available courses.</p>
+    {% endfor %}
+</div>
+
+{% endblock %}

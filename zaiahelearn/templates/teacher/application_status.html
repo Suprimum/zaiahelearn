@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="text-center py-5">
+
+  <h3 class="fw-bold">Teacher Application Status</h3>
+
+  {% if application.status == "pending" %}
+    <p class="text-warning mt-3">
+      ⏳ Your application is under review.
+    </p>
+  {% elif application.status == "approved" %}
+    <p class="text-success mt-3">
+      ✅ Your application has been approved!
+    </p>
+    <a href="{% url 'courses:teacher_dashboard' %}" class="btn btn-success mt-3">
+      Go to Teacher Dashboard
+    </a>
+  {% else %}
+    <p class="text-danger mt-3">
+      ❌ Your application was not approved.
+    </p>
+  {% endif %}
+
+</div>
+
+{% endblock %}

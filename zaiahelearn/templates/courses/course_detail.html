@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid px-lg-5">
+
+  <!-- Top Bar -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'courses:dashboard' %}" class="btn btn-outline-secondary btn-sm">
+      ← Back to Dashboard
+    </a>
+    <span class="text-muted small">
+      Course: <strong>{{ course.title }}</strong>
+    </span>
+  </div>
+
+  <!-- Reading Progress -->
+  <div class="progress mb-4 sticky-top" style="height: 6px; top: 60px;">
+    <div id="readingProgress" class="progress-bar bg-success" style="width: 0%;"></div>
+  </div>
+
+  <div class="row">
+
+    <!-- LEFT SIDEBAR (STICKY) -->
+    <div class="col-lg-3 mb-4">
+      <div class="" style="top: 90px;">
+
+        <!-- Lessons -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body p-2">
+            <h6 class="fw-bold mb-2">Lessons</h6>
+
+            <div class="list-group list-group-flush small">
+              {% for l in lessons %}
+              <a href="{% url 'courses:lesson_detail' course.slug course.id l.id %}"
+                 class="list-group-item list-group-item-action {% if l.id == cur_lesson.id %}active{% endif %}">
+                {{ l.title }}
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Lesson Quiz -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h6 class="fw-bold">Lesson Quiz</h6>
+            <p class="text-muted small mb-2">
+              Check your understanding.
+            </p>
+
+            {% if lesson.has_quiz %}
+              <a href="{% url 'courses:lesson_quiz' lesson.id %}" class="btn btn-primary btn-sm w-100">
+                Start Quiz
+              </a>
+            {% else %}
+              <span class="badge bg-secondary">Coming soon</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Other Enrolled Courses -->
+        <div class="card shadow-sm">
+          <div class="card-body p-2">
+            <h6 class="fw-bold mb-2">Your Courses</h6>
+
+            <ul class="list-group list-group-flush small">
+              {% for c in enrolled_courses %}
+              {% if c.course.id != course.id %}
+              <li class="list-group-item">
+                <a href="{% url 'courses:course_detail' c.course.slug c.course.id %}"
+                   class="text-decoration-none">
+                  {{ c.course.title|truncatechars:18 }}
+                </a>
+              </li>
+              {% endif %}
+              {% empty %}
+              <li class="list-group-item text-muted">
+                No other courses
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="col-lg-9">
+
+      <div class="card shadow-sm">
+        <div class="card-body p-lg-4">
+
+          <h3 class="fw-bold mb-1">{{ cur_lesson.title }}</h3>
+          <p class="text-muted small mb-4">{{ course.title }}</p>
+
+          <!-- CONTENT TABS -->
+          <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item">
+              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#lessonTab" type="button">
+                Lesson
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#videoTab" type="button">
+                Video
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#questionsTab" type="button">
+                Past Questions
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content">
+
+            <!-- Lesson Content -->
+            <div class="tab-pane fade show active" id="lessonTab">
+              <div class="math-content" id="lessonContent">
+                {{ lesson_content|safe }}
+              </div>
+            </div>
+
+            <!-- Video Lessons -->
+            <div class="tab-pane fade" id="videoTab">
+              {% if lesson.video_url %}
+                <div class="ratio ratio-16x9">
+                  <iframe src="{{ lesson.video_url }}" allowfullscreen></iframe>
+                </div>
+              {% else %}
+                <p class="text-muted">No video available for this lesson.</p>
+              {% endif %}
+            </div>
+
+            <!-- Past Questions -->
+            <div class="tab-pane fade" id="questionsTab">
+              {% if past_questions %}
+                <ul class="list-group">
+                  {% for q in past_questions %}
+                  <li class="list-group-item">
+                    {{ q.question_text }}
+                  </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="text-muted">Past questions will appear here.</p>
+              {% endif %}
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ================= READING PROGRESS ================= */
+document.addEventListener("scroll", function () {
+
+  const content = document.getElementById("lessonContent");
+  const progressBar = document.getElementById("readingProgress");
+
+  if (!content || !progressBar) return;
+
+  const contentTop = content.offsetTop;
+  const contentHeight = content.offsetHeight;
+  const scrollPos = window.scrollY + window.innerHeight;
+
+  let percent = ((scrollPos - contentTop) / contentHeight) * 100;
+  percent = Math.min(100, Math.max(0, percent));
+
+  progressBar.style.width = percent + "%";
+});
+</script>
+{% endblock %}

@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+  .rich-editor, .markdown-editor {
+    min-height: 300px;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    background-color: #fff;
+    min-width: 100%;
+  }
+    
+  #livePreview {
+    min-height: 300px;
+    overflow-y: auto;
+  }
+
+  .ck-editor__editable {
+    min-height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid px-lg-5">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0">
+      {% if lesson %} ✏️ Edit Lesson {% else %} ➕ Create Lesson {% endif %}
+    </h3>
+
+    <span class="badge 
+      {% if form.instance.status == 'published' %} bg-success {% else %} bg-secondary {% endif %}">
+      {{ form.instance.status|capfirst }}
+    </span>
+  </div>
+
+  <form method="post" id="lessonForm">
+    {% csrf_token %}
+
+    <div class="row">
+      <div class="col-lg-8">
+
+        <div class="mb-3">
+          {{ form.course.label_tag }}
+          {{ form.course }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.title.label_tag }}
+          {{ form.title }}
+        </div>
+
+        <!-- Editor Tabs -->
+        <ul class="nav nav-tabs" id="editorTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" type="button" data-bs-toggle="tab" data-bs-target="#htmlTab" role="tab">
+              Rich Text (HTML)
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#mdTab" role="tab">
+              Markdown
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#previewTab" role="tab">
+              Live Preview
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content border rounded-bottom p-3 bg-white">
+          <!-- Rich HTML -->
+          <div class="tab-pane fade show active" id="htmlTab" role="tabpanel">
+            {{ form.content_html }}
+            <small class="text-muted d-block mt-2">
+              Supports MathJax: <code>\( x^2 + y^2 \)</code>
+            </small>
+          </div>
+
+          <!-- Markdown -->
+          <div class="tab-pane fade" id="mdTab" role="tabpanel">
+            {{ form.content_markdown }}
+            <small class="text-muted d-block mt-2">
+              Markdown + LaTeX supported
+            </small>
+          </div>
+
+          <!-- Live Preview -->
+          <div class="tab-pane fade" id="previewTab">
+            <div class="border rounded p-3 bg-light" id="livePreview">
+              <p class="text-muted text-center">Start typing to see a live preview…</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Sidebar -->
+      <div class="col-lg-4 mt-4 mt-lg-0">
+        <div class="card shadow-sm">
+          <div class="card-body">
+
+            <h6 class="fw-bold mb-3">Publishing</h6>
+            <div class="mb-3">
+              {{ form.status.label_tag }}
+              {{ form.status }}
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mb-2">
+              <i class="fas fa-save me-1"></i> Save Lesson
+            </button>
+
+            <a href="{% url 'courses:teacher_dashboard' %}" class="btn btn-outline-secondary w-100 mb-2">
+              Cancel
+            </a>
+
+            {% if lesson %}
+            <!-- Delete Button triggers modal -->
+            <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteLessonModal">
+              🗑️ Delete Lesson
+            </button>
+            {% endif %}
+
+            <hr>
+            <small class="text-muted">Draft lessons are not visible to students.</small>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+<!-- Delete Confirmation Modal -->
+{% if lesson %}
+<div class="modal fade" id="deleteLessonModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger">Delete Lesson</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong>{{ lesson.title }}</strong>?</p>
+        <p class="text-muted small">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="post" action="{% url 'courses:lesson_delete' lesson.id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+
+<script>
+let editorInstance = null;
+
+document.addEventListener("DOMContentLoaded", function () {
+
+  const htmlTabBtn  = document.querySelector('[data-bs-target="#htmlTab"]');
+  const previewTab  = document.querySelector('[data-bs-target="#previewTab"]');
+
+  const htmlTextarea = document.querySelector(".rich-editor");
+  const mdTextarea   = document.querySelector(".markdown-editor");
+  const previewBox   = document.getElementById("livePreview");
+
+  /* ================= CKEDITOR INIT ================= */
+  htmlTabBtn.addEventListener("shown.bs.tab", function () {
+
+    if (editorInstance || !htmlTextarea) return;
+
+    ClassicEditor.create(htmlTextarea, {
+      toolbar: [
+        'heading',
+        '|',
+        'bold', 'italic', 'link',
+        'bulletedList', 'numberedList',
+        '|',
+        'blockQuote', 'codeBlock',
+        '|',
+        'undo', 'redo'
+      ],
+    })
+    .then(editor => {
+      editorInstance = editor;
+    })
+    .catch(error => {
+      console.error("CKEditor init error:", error);
+    });
+
+  });
+
+  /* ================= LIVE PREVIEW ================= */
+  previewTab.addEventListener("shown.bs.tab", function () {
+
+    let html = "";
+
+    // Priority 1: Markdown
+    if (mdTextarea && mdTextarea.value.trim()) {
+      html = marked.parse(mdTextarea.value);
+    }
+    // Priority 2: CKEditor
+    else if (editorInstance) {
+      html = editorInstance.getData();
+    }
+    // Fallback: raw textarea value
+    else if (htmlTextarea && htmlTextarea.value.trim()) {
+      html = htmlTextarea.value;
+    }
+
+    previewBox.innerHTML = html || `
+      <p class="text-muted text-center">
+        Nothing to preview yet…
+      </p>
+    `;
+
+    // MathJax render AFTER visible
+    if (window.MathJax) {
+      MathJax.typesetPromise([previewBox]);
+    }
+  });
+
+});
+</script>
+
+
+{% endblock %}
