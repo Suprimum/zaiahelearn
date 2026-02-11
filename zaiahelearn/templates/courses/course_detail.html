@@ -1,4 +1,41 @@
 {% extends "base.html" %}
+
+
+
+{% block hero-section %}
+     <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">{{ course.title }}</h1>
+            <p class="lead mt-3">Continue your learning journey with this course.</p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'courses:enroll_courses' %}">Courses</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div> 
+    </nav>
+{% endblock %}
+
+
 {% block content %}
 
 <div class="container-fluid px-lg-5">
@@ -48,8 +85,8 @@
               Check your understanding.
             </p>
 
-            {% if lesson.has_quiz %}
-              <a href="{% url 'courses:lesson_quiz' lesson.id %}" class="btn btn-primary btn-sm w-100">
+            {% if cur_lesson.quizzes.count > 0 %} 
+              <a href="{% url 'courses:lesson_quiz_page' cur_lesson.id %}" class="btn btn-primary btn-sm w-100">
                 Start Quiz
               </a>
             {% else %}
@@ -68,7 +105,7 @@
               {% if c.course.id != course.id %}
               <li class="list-group-item">
                 <a href="{% url 'courses:course_detail' c.course.slug c.course.id %}"
-                   class="text-decoration-none">
+                   class="text-decoration-none {% if c.course.lessons.count == 0 %}disabled{% endif %}">
                   {{ c.course.title|truncatechars:18 }}
                 </a>
               </li>

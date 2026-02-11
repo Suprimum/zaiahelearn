@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+
+{% block hero-section %}
+    <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">Explore Courses</h1>
+            <p class="lead mt-3">Discover lessons crafted by experienced teachers.</p>
+
+             <!-- Search -->
+            <form class="row justify-content-center mb-4">
+                <div class="col-md-6">
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ query }}"
+                        class="form-control form-control-lg"
+                        placeholder="Search courses..."
+                        onkeypress="if(event.key === 'Enter') { event.preventDefault(); search(this); }"
+                    >
+                </div>
+            </form>
+        </div>
+    </section>
+    
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li> 
+                    {% if user.is_authenticated %}
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_login' %}">Login</a>
+                    </li>
+                    {% endif %} 
+                </ul>
+            </div>
+        </div>
+    </nav>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="container py-5">
+  <!-- Courses Grid -->
+  <div class="row g-4">
+
+    {% for course in courses %}
+    <div class="col-md-6 col-lg-4">
+      <div class="card h-100 shadow-sm">
+
+        <div class="card-body">
+          <h5 class="fw-bold">
+            {{ course.title }} ({{ course.level }})
+          </h5>
+
+          <p class="text-muted small">
+            {{ course.description|truncatechars:100 }}
+          </p>
+        </div>
+
+        <div class="card-footer bg-white border-0">
+          <a href="{% if user.is_authenticated %}{% url 'courses:course_detail' course.slug course.id %}{% else %}{% url 'account_login' %}{% endif %}"
+             class="btn btn-outline-primary w-100">
+            View Course
+          </a>
+        </div>
+
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center text-muted">
+      No courses found.
+    </div>
+    {% endfor %}
+
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function search(input) {
+    const query = input.value.trim();
+    
+    window.location.href = "?q=" + encodeURIComponent(query);
+
+}
+</script>
+{% endblock %}

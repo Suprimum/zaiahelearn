@@ -1,41 +1,120 @@
 {% extends "base.html" %}
+
+{%block hero-section %}
+ <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">Your Lessons</h1>
+            <p class="lead mt-3">Manage your lessons and courses on ZaiaheLearn.</p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li>  
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div> 
+        </div>
+    </nav>
+{% endblock %}
+
 {% block content %}
 
 <h3 class="fw-bold mb-4">My Lessons</h3>
 
-<a href="{% url 'courses:lesson_create' %}" class="btn btn-success mb-3">
-    <i class="fas fa-plus"></i> New Lesson
+<a href="{% url 'courses:lesson_create' %}" class="btn btn-success mb-4">
+  <i class="fas fa-plus"></i> New Lesson
 </a>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Title</th>
-            <th>Course</th>
-            <th>Status</th>
-            <th>Updated</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for lesson in lessons %}
-        <tr>
-            <td>{{ lesson.title }}</td>
-            <td>{{ lesson.course }}</td>
-            <td>
-                <span class="badge {% if lesson.status == 'published' %}bg-success{% else %}bg-secondary{% endif %}">
-                    {{ lesson.status }}
-                </span>
-            </td>
-            <td>{{ lesson.updated_at|date:"M d, Y" }}</td>
-            <td>
-                <a href="{% url 'courses:lesson_edit' lesson.id %}" class="btn btn-sm btn-outline-primary">
-                    Edit
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
+<div class="table-responsive">
+<table class="table table-striped align-middle">
+  <thead class="table-light">
+    <tr>
+      <th>Lesson</th>
+      <th>Course</th>
+      <th>Status</th>
+      <th>Updated</th>
+      <th>Quiz</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for lesson in lessons %}
+    <tr>
+      <!-- Lesson -->
+      <td>
+        <strong>{{ lesson.title }}</strong>
+      </td>
+
+      <!-- Course -->
+      <td>{{ lesson.course }}</td>
+
+      <!-- Status -->
+      <td>
+        <span class="badge {% if lesson.status == 'published' %}bg-success{% else %}bg-secondary{% endif %}">
+          {{ lesson.status|capfirst }}
+        </span>
+      </td>
+
+      <!-- Updated -->
+      <td class="text-muted small">
+        {{ lesson.updated_at|date:"M d, Y" }}
+      </td>
+
+      <!-- QUIZ SECTION -->
+      <td>
+        {% if lesson.quizzes.exists %}
+          <span class="badge bg-primary">
+            {{ lesson.quizzes.count }} Quiz{{ lesson.quizzes.count|pluralize }}
+          </span>
+          <div class="mt-1">
+            <a href="{% url 'courses:lesson_quiz_list' lesson.id %}"
+               class="text-decoration-none small">
+              View quizzes
+            </a>
+          </div>
+        {% else %}
+          <span class="text-muted small">No quiz</span>
+        {% endif %}
+      </td>
+
+      <!-- Actions -->
+      <td>
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{% url 'courses:lesson_edit' lesson.id %}"
+             class="btn btn-sm btn-outline-primary">
+            Edit
+          </a>
+
+          <a href="{% url 'courses:quiz_create' lesson.id %}"
+             class="btn btn-sm btn-outline-success">
+            + Add Quiz
+          </a>
+        </div>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="6" class="text-center text-muted py-4">
+        No lessons created yet.
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
+</div>
 
 {% endblock %}

@@ -1,4 +1,43 @@
 {% extends "base.html" %}
+
+
+
+
+
+{% block hero-section %}
+    <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">Your Dashboard</h1>
+            <p class="lead mt-3">Manage your learning progress and explore new courses.</p>
+        </div>
+    </section>
+    
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'courses:enroll_courses' %}">Courses</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div> 
+        </div>
+    </nav>
+{% endblock %}
+
 {% block content %}
 {% load dict_extra %}
 
@@ -100,6 +139,17 @@
     {% empty %}
     <p class="text-muted">You are enrolled in all available courses.</p>
     {% endfor %}
+</div>
+
+<!-- Delete account -->
+<div class="card border-danger mb-4">
+    <div class="card-body">
+        <h5 class="card-title text-danger">Danger Zone</h5>
+        <p class="card-text">Permanently delete your account and all associated data.</p>
+        <a href="{% url 'account_delete' %}" class="btn btn-danger">
+            <i class="fas fa-trash-alt"></i> Delete Account
+        </a>
+    </div>
 </div>
 
 {% endblock %}

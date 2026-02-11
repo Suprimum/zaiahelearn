@@ -19,7 +19,91 @@
   .ck-editor__editable {
     min-height: 300px;
     }
+    /* ===============================
+   MathJax Scrollbar Fix
+================================ */
+
+/* Prevent MathJax SVG overflow */
+.mathjax-container,
+.math-content,
+#quizPreview {
+  overflow-x: hidden !important;
+}
+
+/* MathJax SVG block fixes */
+mjx-container[jax="SVG"] {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  display: block;
+}
+
+/* Inline math */
+mjx-container[jax="SVG"][display="inline"] {
+  display: inline-block !important;
+  vertical-align: middle;
+  overflow: visible !important;
+}
+
+/* Display math spacing */
+mjx-container[display="true"] {
+  margin: 1rem 0;
+}
+
+/* Prevent Bootstrap tab overflow */
+.tab-pane {
+  overflow-x: hidden;
+}
+
+/* Mobile safety */
+@media (max-width: 576px) {
+  mjx-container[jax="SVG"] {
+    font-size: 90%;
+  }
+}
+
 </style>
+{% endblock %}
+
+{% block hero-section %}
+    <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">
+                {% if lesson %} ✏️ Edit Lesson {% else %} ➕ Create Lesson {% endif %}
+            </h1>
+            <p class="lead mt-3">
+                {% if lesson %}
+                    Update the content and settings for your lesson.
+                {% else %}
+                    Start by filling out the details for your new lesson.
+                {% endif %}
+            </p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div> 
+        </div>
+    </nav>
 {% endblock %}
 
 {% block content %}

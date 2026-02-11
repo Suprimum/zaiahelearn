@@ -1,4 +1,38 @@
 {% extends "base.html" %}
+
+
+
+{% block hero-section %}
+    <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">Teacher Application Status</h1>
+            <p class="lead mt-3">Check the status of your application to become a teacher on ZaiaheLearn.</p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li>  
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div> 
+    </nav>
+{% endblock %}
+
+
 {% block content %}
 
 <div class="text-center py-5">
@@ -10,12 +44,25 @@
       ⏳ Your application is under review.
     </p>
   {% elif application.status == "approved" %}
-    <p class="text-success mt-3">
+    
+    {% if form %}
+        <p class="text-success mt-3">
       ✅ Your application has been approved!
-    </p>
-    <a href="{% url 'courses:teacher_dashboard' %}" class="btn btn-success mt-3">
-      Go to Teacher Dashboard
-    </a>
+        </p>
+      <form method="post">
+          {% csrf_token %}
+          {{form.as_p}}
+          <input type="submit" class="btn btn-primary" value="Submit"/>
+      </form>
+    {%else%}
+      <p class="text-success mt-3">
+      ✅ Welcome {{request.user}}!
+     </p>
+      <a href="{% url 'courses:teacher_dashboard' %}" class="btn btn-success mt-3">
+        Go to Teacher Dashboard
+      </a>
+    {%endif%}
+    
   {% else %}
     <p class="text-danger mt-3">
       ❌ Your application was not approved.

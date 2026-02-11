@@ -1,0 +1,176 @@
+
+{% extends "base.html" %}
+{% load static %}
+{% load dict_extra %}
+
+
+
+
+
+
+
+
+{% block hero-section %}
+    <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">
+                🧠 Quiz Result Summary
+            </h1>
+            <p class="lead mt-3">
+                Summary of your quiz performance
+            </p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'courses:dashboard' %}">Dashboard</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div> 
+        </div>
+    </nav>
+{% endblock %}
+
+
+
+
+
+{% block content %}
+<div class="container my-5">
+
+  <!-- RESULT SUMMARY -->
+  <div class="card shadow-lg mb-4 border-0">
+    <div class="card-body text-center">
+
+      <h2 class="fw-bold mb-3">{{ quiz.title }} - Result</h2>
+
+      {% if attempt.passed %}
+        <div class="badge bg-success fs-6 px-4 py-2 mb-3">
+          ✅ PASSED
+        </div>
+      {% else %}
+        <div class="badge bg-danger fs-6 px-4 py-2 mb-3">
+          ❌ FAILED
+        </div>
+      {% endif %}
+
+      <h1 class="display-4 fw-bold">
+        {{ percentage }}%
+      </h1>
+
+      <p class="lead">
+        Score: {{ attempt.score }} / {{ attempt.total }}
+      </p>
+
+      <p class="text-muted">
+        Pass Mark: {{ quiz.pass_score }}%
+      </p>
+
+      <hr>
+
+      <a href="{% url 'courses:lesson_quiz_page' quiz.lesson.id %}"
+         class="btn btn-outline-primary">
+         Back to Quizzes
+      </a>
+
+    </div>
+  </div>
+
+
+<!-- DETAILED BREAKDOWN -->
+<div class="card shadow-sm">
+  <div class="card-body">
+
+    <h4 class="fw-bold mb-4">Answer Review</h4>
+
+   {% for q in questions %}
+<div class="mb-4 p-4 border rounded">
+
+  <h6 class="fw-bold">
+    Question {{ forloop.counter }}
+  </h6>
+
+  <div class="mb-3">
+    {{ q.content_html|safe }}
+  </div>
+
+  {% with selected=attempt.answers|get_item:q.id %}
+  
+  <!-- Answer Summary -->
+  {% if selected %}
+    <div class="alert {% if selected == q.correct_label %}alert-success{% else %}alert-danger{% endif %}">
+      <strong>Your Answer:</strong> {{ selected }}
+    </div>
+  {% else %}
+    <div class="alert alert-secondary">
+      You did not answer this question.
+    </div>
+  {% endif %}
+
+  <div class="alert alert-info">
+    <strong>Correct Answer:</strong> {{ q.correct_label }}
+  </div>
+
+  <!-- Options -->
+  {% for c in q.choices.all %}
+  <div class="form-check mb-2">
+    <label class="form-check-label
+      {% if c.choice == selected and c.is_correct %}
+          text-success fw-bold
+      {% elif c.choice == selected and not c.is_correct %}
+          text-danger fw-bold
+      {% elif c.is_correct %}
+          text-success
+      {% endif %}
+    ">
+
+      {{ c.choice }}. {{ c.answer }}
+
+      {% if c.choice == selected %}
+        <span class="badge bg-dark ms-2">Your choice</span>
+      {% endif %}
+
+      {% if c.is_correct %}
+        <span class="badge bg-success ms-2">Correct</span>
+      {% endif %}
+
+    </label>
+  </div>
+  {% endfor %}
+
+  {% endwith %}
+
+</div>
+{% endfor %}
+
+  </div>
+</div>
+
+
+
+<!-- MathJax Support -->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+{% endblock %}

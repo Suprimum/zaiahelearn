@@ -149,3 +149,4 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_REDIRECT_URL = 'courses:dashboard'
 ACCOUNT_LOGOUT_ON_GET = True #skips confirm logout page
 LOGOUT_REDIRECT = 'home'
+ACCOUNT_FORMS = {'signup': 'zaiahelearn.apps.courses.forms.StudentSignupForm'}

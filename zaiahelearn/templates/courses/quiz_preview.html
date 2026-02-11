@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+
+{% block hero-section %}
+    <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">
+                👀 Quiz Preview
+            </h1>
+            <p class="lead mt-3">
+                Preview all your created questions and correct answers
+            </p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div> 
+        </div>
+    </nav>
+{% endblock %}
+
+
+{% block content %}
+<div class="container px-lg-5 py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-1">👀 Quiz Preview</h3>
+      <p class="text-muted mb-0 mt-2">Quiz Title: <b>{{ quiz.title|title }}</b></p>
+    </div>
+
+    <a href="{% url 'courses:lesson_quiz_list' quiz.lesson.id %}"
+       class="btn btn-outline-secondary">
+      ← Back
+    </a>
+  </div>
+
+  {% for question in quiz.questions.all %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+
+        <h6 class="fw-semibold mb-3">
+          Question {{ forloop.counter }}
+        </h6>
+
+        <div class="mb-3">
+          {{ question.content_html|safe }}
+        </div>
+
+        <div class="list-group">
+          {% for choice in question.choices.all %}
+            <label class="list-group-item">
+              <input class="form-check-input me-2"
+                     type="radio"
+                     disabled>
+              <strong>{{ choice.choice }}.</strong> {{ choice.answer }}
+            </label>
+          {% endfor %}
+        </div>
+
+        {% if question.correct_choice %}
+          <div class="mt-3 text-success small">
+            ✔ Correct answer: {{ question.correct_choice }}
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+  {% empty %}
+    <div class="alert alert-warning">
+      This quiz has no questions yet.
+    </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

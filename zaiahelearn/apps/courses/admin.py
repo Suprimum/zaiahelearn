@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Course, Lesson, TeacherApplication, Teacher
+from .models import Course, Lesson, TeacherApplication, Teacher, UserProfile, Quiz, Question, Choice, QuestionBank, LessonQuizAttempt
 
 
 
@@ -38,4 +38,32 @@ class TeacherAdmin(admin.ModelAdmin):
     list_filter = ("approved",)
     search_fields = ("user__username", "user__email")
 
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "role")
+    list_filter = ("role",)
+    search_fields = ("user__username", "user__email")
+
+@admin.register(Quiz)
+class QuizAdmin(admin.ModelAdmin):
+    list_display = ('title','is_published','created_at','time_limit','pass_score','lesson')
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ('quiz','content_html','content_markdown')
+
+
+@admin.register(Choice)
+class ChoiceAdmin(admin.ModelAdmin):
+    list_display = ['question','choice','answer','is_correct']
+
+
+@admin.register(QuestionBank)
+class QuestionBankAdmin(admin.ModelAdmin):
+    list_display = ['lesson','difficulty']
+
+@admin.register(LessonQuizAttempt)
+class LessonQuizAttemptAdmin(admin.ModelAdmin):
+    list_display = ['user','lesson','quiz',]
 

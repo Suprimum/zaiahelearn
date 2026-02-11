@@ -1,0 +1,153 @@
+{% load dict_extra %}
+
+<div class="card mb-4 shadow-sm question-item">
+  <div class="card-body">
+
+    <!-- Hidden Question ID -->
+    <input type="hidden" name="question_id[]" value="{{ question.id|default:'' }}">
+
+    <!-- ============================= -->
+    <!-- Question Editor Tabs -->
+    <!-- ============================= -->
+
+    {% with uid=question.id|default:forloop.counter|default:"new" %}
+    <ul class="nav nav-tabs mb-2">
+      <li class="nav-item">
+        <button type="button"
+                class="nav-link active"
+                data-bs-toggle="tab"
+                data-bs-target="#rich-{{ uid }}">
+          Rich Text
+        </button>
+      </li>
+
+      <li class="nav-item">
+        <button type="button"
+                class="nav-link"
+                data-bs-toggle="tab"
+                data-bs-target="#md-{{ uid }}">
+          Markdown
+        </button>
+      </li>
+
+      <li class="nav-item">
+        <button type="button"
+                class="nav-link"
+                data-bs-toggle="tab"
+                data-bs-target="#preview-{{ uid }}">
+          👀 Preview
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content border rounded p-3 bg-white">
+
+      <!-- RICH TEXT -->
+      <div class="tab-pane fade show active"
+           id="rich-{{ uid }}">
+        <textarea
+          class="form-control rich-editor"
+          name="question_content_html[]">
+{{ question.content_html|default:'' }}
+        </textarea>
+      </div>
+
+      <!-- MARKDOWN -->
+      <div class="tab-pane fade"
+           id="md-{{ uid }}">
+        <textarea
+          class="form-control markdown-editor"
+          name="question_content_markdown[]"
+          rows="4"
+          placeholder="Write using Markdown + LaTeX...">
+{{ question.content_markdown|default:'' }}
+        </textarea>
+      </div>
+
+      <!-- PREVIEW -->
+      <div class="tab-pane fade"
+           id="preview-{{ uid }}">
+        <div class="preview-box border rounded p-3 bg-light">
+          <p class="text-muted text-center">Live preview...</p>
+        </div>
+      </div>
+
+    </div>
+    {% endwith %}
+
+    <!-- ============================= -->
+    <!-- OPTIONS -->
+    <!-- ============================= -->
+
+    <div class="row mt-3">
+      {% for letter in "ABCD" %}
+      <div class="col-md-6 mb-2">
+        <label class="fw-bold">Option {{ letter }}</label>
+        <input type="text"
+               name="option_{{ letter }}[]"
+               class="form-control"
+               value="{% if question %}{{ question.id|choice_answer:letter }}{% endif %}">
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- ============================= -->
+    <!-- CORRECT ANSWER -->
+    <!-- ============================= -->
+
+    <div class="mt-2">
+      <label class="fw-bold">Correct Answer</label>
+      <select name="correct_choice[]" class="form-select">
+        {% for l in "ABCD" %}
+        <option value="{{ l }}"
+          {% if question.correct_choice == l %}selected{% endif %}>
+          {{ l }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- ============================= -->
+    <!-- DIFFICULTY (Safe Version) -->
+    <!-- ============================= -->
+
+    <div class="mt-2">
+      <label class="fw-bold">Difficulty Level</label>
+      <select name="difficulty[]" class="form-select">
+
+        <option value="easy"
+          {% if question.difficulty == "easy" %}
+          selected
+          {% endif %}>
+          Easy
+        </option>
+
+        <option value="medium"
+          {% if question.difficulty == "medium" %}
+          selected
+          {% endif %}>
+          Medium
+        </option>
+
+        <option value="hard"
+          {% if question.difficulty == "hard" %}
+          selected
+          {% endif %}>
+          Hard
+        </option>
+
+      </select>
+    </div>
+
+    <!-- ============================= -->
+    <!-- REMOVE BUTTON -->
+    <!-- ============================= -->
+
+    <button type="button"
+            class="btn btn-sm btn-outline-danger mt-3"
+            onclick="this.closest('.question-item').remove()">
+      🗑 Remove Question
+    </button>
+
+  </div>
+</div>

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+
+
+
+
+{% block hero-section %}
+    <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">
+                📊 Quiz Attempts
+            </h1>
+            <p class="lead mt-3">
+                View Quiz analysis for a particular lesson
+            </p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div> 
+        </div>
+    </nav>
+{% endblock %}
+
+
+
+
+
+
+
+{% block content %}
+<div class="container px-lg-5 py-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-1">📊 Quiz Attempts</h3>
+      <p class="text-muted mb-0">{{ quiz.title }}</p>
+    </div>
+
+    <a href="{% url 'courses:lesson_quiz_list' quiz.lesson.id %}"
+       class="btn btn-outline-secondary">
+      ← Back
+    </a>
+  </div>
+
+  <!-- Stats -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <h6 class="text-muted">Total Attempts</h6>
+          <h3 class="fw-bold">{{ stats.total_attempts }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <h6 class="text-muted">Average Score</h6>
+          <h3 class="fw-bold">
+            {{ stats.avg_score|default:"0"|floatformat:1 }}
+          </h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attempts Table -->
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Student</th>
+            <th>Score</th>
+            <th>Total</th>
+            <th>Started</th>
+            <th>Completed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for attempt in attempts %}
+            <tr>
+              <td>{{ attempt.user }}</td>
+              <td class="fw-semibold">
+                {{ attempt.score }}
+              </td>
+              <td>{{ attempt.total }}</td>
+              <td>{{ attempt.started_at|date:"M d, Y H:i" }}</td>
+              <td>
+                {% if attempt.completed_at %}
+                  {{ attempt.completed_at|date:"M d, Y H:i" }}
+                {% else %}
+                  <span class="text-warning">In progress</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-4">
+                No attempts yet.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

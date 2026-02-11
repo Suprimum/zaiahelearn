@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+  .editor-box {
+    min-height: 220px;
+  }
+  #previewBox {
+    min-height: 220px;
+    background: #f8f9fa;
+    overflow-x: hidden;
+  }
+</style>
+
+<style>
+
+/* Prevent horizontal scroll in preview */
+.preview-box {
+    overflow-x: hidden !important;
+    overflow-y: auto;
+    word-wrap: break-word;
+}
+
+/* Make MathJax responsive */
+.preview-box mjx-container {
+    max-width: 100% !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Force SVG math to scale inside container */
+.preview-box mjx-container[jax="SVG"] > svg {
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+/* Prevent inline math from stretching layout */
+.preview-box mjx-container[display="false"] {
+    display: inline-block;
+    max-width: 100%;
+    overflow-x: auto;
+    vertical-align: middle;
+}
+
+/* Fix long equations */
+.preview-box {
+    white-space: normal;
+}
+.preview-box mjx-container {
+    overflow: visible !important;
+}
+.tab-pane {
+    overflow: visible !important;
+}
+.preview-box mjx-container[display="true"] {
+    margin: 1rem auto !important;
+    text-align: center;
+}
+
+</style>
+
+{% endblock %}
+
+
+
+{% block hero-section %}
+    <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">
+                {% if quiz %} ✏️ Edit Quiz {% else %} ➕ Create Quiz {% endif %}
+            </h1>
+            <p class="lead mt-3">
+                {% if quiz %}
+                    Update the questions and settings for your quiz.
+                {% else %}
+                    Start by filling out the details for your new quiz.
+                {% endif %}
+            </p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div> 
+        </div>
+    </nav>
+{% endblock %}
+
+
+{% block content %}
+<div class="container-fluid px-lg-5">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold">
+      {% if quiz %} ✏️ Edit Quiz {% else %} ➕ Create Quiz {% endif %}
+    </h3>
+
+    <a href="{% url 'courses:lesson_quiz_list' lesson.id %}"
+       class="btn btn-outline-secondary btn-sm">
+      ← Back to Quizzes
+    </a>
+  </div>
+
+  <form method="post" id="quizForm">
+    {% csrf_token %}
+
+    <div class="row">
+      <!-- MAIN -->
+      <div class="col-lg-8">
+
+        <!-- Quiz Title -->
+        <div class="mb-3">
+          <label class="form-label fw-bold">Quiz Title</label>
+          {{ form.title }}
+        </div>
+
+        <!-- Quiz Description -->
+        <div class="mb-3 card">
+          <label class="form-label fw-bold p-2">Quiz Description</label>
+            {{ form.description }}
+        </div>
+
+        <!-- TABS 
+        <ul class="nav nav-tabs mb-2">
+          <li class="nav-item">
+            <button type="button" class="nav-link active"
+              data-bs-toggle="tab" data-bs-target="#richTab">
+              Description
+            </button>
+          </li>
+        -->
+          <!--
+          <li class="nav-item">
+            <button type="button" class="nav-link"
+              data-bs-toggle="tab" data-bs-target="#mdTab">
+              Markdown
+            </button>
+          </li>
+        
+          <li class="nav-item">
+            <button type="button" class="nav-link"
+              data-bs-toggle="tab" data-bs-target="#previewTab">
+              👀 Preview
+            </button>
+          </li>
+        
+        </ul>
+      -->
+
+      <!--
+
+        <div class="tab-content border rounded-bottom p-3 bg-white">
+
+          RICH TEXT 
+          <div class="tab-pane fade show active" id="richTab">
+            {{form.description}}
+            <input type="hidden" name="description" id="hiddenHtml">
+          </div>
+        
+
+           MARKDOWN 
+          <div class="tab-pane fade" id="mdTab">
+            <textarea id="markdownInput"
+              name="description_markdown"
+              class="form-control editor-box"
+              placeholder="Write using Markdown + LaTeX">
+              {{ form.description_markdown.value }}
+            </textarea>
+          </div>
+        
+
+           PREVIEW 
+          <div class="tab-pane fade" id="previewTab">
+            <div id="previewBox" class="border rounded p-3"></div>
+          </div>
+        
+
+        </div>
+      -->
+
+        <!-- QUESTIONS -->
+        <hr class="my-4">
+
+        <h5 class="fw-bold mb-3">Questions</h5>
+
+        <div id="questionContainer">
+          {% for question in questions %}
+            {% include "courses/partials/question_form.html" with question=question %}
+          {% empty %}
+            {% include "courses/partials/question_form.html" %}
+          {% endfor %}
+        </div>
+
+        <button type="button" class="btn btn-outline-primary mt-3"
+          onclick="addQuestion()">
+          ➕ Add Question
+        </button>
+
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="col-lg-4 mt-4 mt-lg-0">
+        <div class="card shadow-sm">
+          <div class="card-body">
+
+            <div class="mb-3">
+              <label class="fw-bold">Time Limit (minutes)</label>
+              {{ form.time_limit }}
+            </div>
+
+            <div class="mb-3">
+              <label class="fw-bold">Pass Score (%)</label>
+              {{ form.pass_score }}
+            </div>
+
+            <div class="form-check mb-3">
+              {{ form.is_published }}
+              <label class="form-check-label">
+                Publish Quiz
+              </label>
+            </div>
+
+            <button class="btn btn-primary w-100 mb-2">
+              💾 Save Quiz
+            </button>
+
+            {% if quiz %}
+            <a href="{% url 'courses:quiz_delete' quiz.id %}"
+               class="btn btn-outline-danger w-100">
+              🗑️ Delete Quiz
+            </a>
+            {% endif %}
+
+            {% if quiz %}
+              
+            <a href="{% url 'courses:quiz_add_from_bank' quiz.id %}"
+              class="btn btn-outline-primary w-100 mb-2 mt-3">
+                🧠 Add from Question Bank
+            </a>
+            {%endif%}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+
+
+{% block extra_js %}
+<script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<script>
+let editors = new Map();
+
+/* Initialize editors inside a container */
+function initializeEditors(scope=document) {
+
+  scope.querySelectorAll(".rich-editor").forEach(textarea => {
+
+    if (textarea.classList.contains("editor-loaded")) return;
+
+    ClassicEditor.create(textarea, {
+      toolbar: [
+        'heading','|',
+        'bold','italic','link',
+        'bulletedList','numberedList',
+        'blockQuote','codeBlock',
+        '|','undo','redo'
+      ]
+    }).then(editor => {
+
+      textarea.classList.add("editor-loaded");
+      editors.set(textarea, editor);
+
+      editor.model.document.on('change:data', () => {
+        updatePreview(textarea.closest(".question-item"));
+      });
+
+    }).catch(console.error);
+  });
+}
+
+/* Update preview */
+function updatePreview(container) {
+
+  const previewBox = container.querySelector(".preview-box");
+  const mdEditor = container.querySelector(".markdown-editor");
+  const richTextarea = container.querySelector(".rich-editor");
+
+  let html = "";
+
+  if (mdEditor.value.trim()) {
+    html = marked.parse(mdEditor.value);
+  } else if (editors.has(richTextarea)) {
+    html = editors.get(richTextarea).getData();
+  }
+
+  previewBox.innerHTML = html || "<p class='text-muted'>Nothing to preview...</p>";
+
+  if (window.MathJax) {
+    MathJax.typesetClear([previewBox]);
+    MathJax.typesetPromise([previewBox]);
+  }
+}
+
+/* Markdown live preview */
+document.addEventListener("input", function(e) {
+  if (e.target.classList.contains("markdown-editor")) {
+    updatePreview(e.target.closest(".question-item"));
+  }
+});
+
+/* Preview tab event */
+document.addEventListener("shown.bs.tab", function(e) {
+  if (e.target.textContent.includes("Preview")) {
+    updatePreview(e.target.closest(".question-item"));
+  }
+});
+
+/* Add new question */
+function addQuestion() {
+  fetch("{% url 'courses:question_empty_partial' %}")
+    .then(response => response.text())
+    .then(html => {
+      const container = document.getElementById("questionContainer");
+      container.insertAdjacentHTML("beforeend", html);
+      initializeEditors(container.lastElementChild);
+    });
+}
+
+/* Before form submit */
+document.getElementById("quizForm")
+  .addEventListener("submit", function() {
+    editors.forEach(editor => {
+      editor.updateSourceElement();
+    });
+  });
+
+document.addEventListener("DOMContentLoaded", function() {
+  initializeEditors();
+});
+</script>
+
+{% endblock %}

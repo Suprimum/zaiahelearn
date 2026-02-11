@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+
+
+
+{% block hero-section %}
+    <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">
+                 ➕ Add Questions to {{ quiz.title |title}}
+            </h1>
+            <p class="lead mt-3">
+                Add questions from your questions bank to the quiz 
+            </p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div> 
+        </div>
+    </nav>
+{% endblock %}
+
+{% block content %}
+
+<div class="container px-lg-5">
+
+  <h4 class="fw-bold mb-3">
+    ➕ Add Questions to "{{ quiz.title |title}}"
+  </h4>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="list-group mb-4">
+      {% for q in questions %}
+      <label class="list-group-item">
+        <input type="checkbox" name="question_ids" value="{{ q.id }}">
+        <span class="badge bg-secondary me-2">{{ q.difficulty }}</span>
+        {{ q.question.content_html|safe|truncatechars:100 }}
+      </label>
+      {% endfor %}
+    </div>
+
+    <button class="btn btn-primary">
+      Import Selected Questions
+    </button>
+
+    <a href="{% url 'courses:lesson_quiz_list' quiz.lesson.id %}"
+       class="btn btn-outline-secondary ms-2">
+      Cancel
+    </a>
+
+  </form>
+
+</div>
+{% endblock %}

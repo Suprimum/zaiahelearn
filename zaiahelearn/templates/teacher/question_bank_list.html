@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid px-lg-5">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold">🧠 Question Bank</h3>
+
+    <a href="{% url 'courses:question_bank_create' %}"
+       class="btn btn-primary">
+      ➕ New Question
+    </a>
+  </div>
+
+  <form method="get" class="row g-2 mb-3">
+    <div class="col-md-3">
+      <select name="difficulty" class="form-select">
+        <option value="">All Difficulties</option>
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <input type="text" name="q"
+        class="form-control"
+        placeholder="Search questions...">
+    </div>
+
+    <div class="col-md-2">
+      <button class="btn btn-outline-secondary w-100">
+        Filter
+      </button>
+    </div>
+  </form>
+
+  <div class="list-group">
+    {% for q in questions %}
+      <div class="list-group-item">
+        <div class="d-flex justify-content-between">
+          <div>
+            <span class="badge bg-info me-1">{{ q.difficulty }}</span>
+            {{ q.content_html|safe|truncatechars:120 }}
+          </div>
+
+          <a href="{% url 'courses:question_bank_edit' q.id %}"
+             class="btn btn-sm btn-outline-primary">
+            Edit
+          </a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="text-muted">No questions found.</div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

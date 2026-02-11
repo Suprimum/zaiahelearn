@@ -2,6 +2,36 @@ from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import User
 
+
+
+class UserRole(models.TextChoices):
+    STUDENT = "student", "Student"
+    TEACHER = "teacher", "Teacher"
+    ADMIN = "admin", "Admin"
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE,related_name='userprofile')
+    role = models.CharField(
+        max_length=20,
+        choices=UserRole.choices,
+        default=UserRole.STUDENT
+    )
+
+    def __str__(self):
+        return f"{self.user.username} ({self.role})"
+
+class ContactMessage(models.Model):
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    subject = models.CharField(max_length=150)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.subject}"
+
+
 class Course(models.Model):
     LEVEL_CHOICES = [
         ('O-Level', 'O-Level'),
@@ -15,7 +45,7 @@ class Course(models.Model):
 
 
     def __str__(self):
-        return self.title
+        return f"{self.title} ({self.level})"
 
 
 
@@ -61,32 +91,92 @@ class LessonProgress(models.Model):
         unique_together = ('user', 'lesson')
 
 
-class Quiz(models.Model):
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
 
+class Quiz(models.Model):
+    lesson = models.ForeignKey(
+        Lesson, on_delete=models.CASCADE, related_name="quizzes"
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+
+    time_limit = models.PositiveIntegerField(
+        help_text="Time limit in minutes", default=10
+    )
+    pass_score = models.PositiveIntegerField(default=50)
+    is_published = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title}-{self.description}-{self.time_limit}-{self.pass_score}"
+    
 
 class Question(models.Model):
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
-    text = models.TextField()
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
+
+    content_html = models.TextField(blank=True)
+    content_markdown = models.TextField(blank=True)
+    correct_choice = models.CharField(max_length=1,null=True,blank=True)
+    difficulty = models.CharField(
+        max_length=20,
+        choices=[("easy","Easy"),("medium","Medium"),("hard","Hard")],
+        default="medium"
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    def get_choice_answer(self, letter):
+        choice = self.choices.filter(choice=letter).first()
+        return choice.answer if choice else ""
+
+
+class QuestionBank(models.Model):
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE)
+    lesson = models.ForeignKey(Lesson,on_delete=models.CASCADE,related_name='bank', null=True)
+    question = models.ForeignKey(Question,on_delete=models.CASCADE,related_name='question_bank',null=True)
+    
+    difficulty = models.CharField(
+        max_length=20,
+        choices=[("easy","Easy"),("medium","Medium"),("hard","Hard")],
+        default="medium"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.lesson.title}"
+
 
 class Choice(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    text = models.CharField(max_length=255)
+    question = models.ForeignKey(
+        Question, on_delete=models.CASCADE, related_name="choices"
+    )
+    choice = models.CharField(max_length=2,default='A')
+    answer = models.CharField(max_length=255,default='')
     is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.choice}: {self.answer}"
+    
 
 class LessonQuizAttempt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    lesson = models.ForeignKey("Lesson", on_delete=models.CASCADE)
-    questions = models.JSONField()
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE,null=True)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE,null=True)
+
+    questions = models.JSONField(null=True)
     user_answers = models.JSONField(null=True, blank=True)
+
     score = models.IntegerField(default=0)
     total = models.IntegerField(default=0)
+
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
-    def __str__(self):
-        return f"{self.user} - {self.lesson}"
-    
+    def percentage(self):
+        if self.total == 0:
+            return 0
+        return (self.score / self.total) * 100
+
+
 
 class Subscription(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -109,7 +199,7 @@ class Enrollment(models.Model):
 
 
 class Teacher(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE,related_name='teacher')
     bio = models.TextField(blank=True)
     approved = models.BooleanField(default=False)
 
@@ -125,7 +215,7 @@ class TeacherApplication(models.Model):
         ('rejected', 'Rejected'),
     ]
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE,related_name='teacher_application')
     full_name = models.CharField(max_length=200)
     subject = models.CharField(max_length=100)
     experience_years = models.PositiveIntegerField()

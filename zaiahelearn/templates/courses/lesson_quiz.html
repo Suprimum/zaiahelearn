@@ -1,0 +1,80 @@
+{%extends "base.html"%}
+
+<!--display quiz details-->
+{% block hero-section %}
+    <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">{{ quiz.title }}</h1>
+            <p class="lead mt-3">Test your knowledge with this quiz!</p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'courses:enroll_courses' %}">Courses</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>  
+    </nav>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            {% if quiz %}
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title text-center">{{ quiz.title }}</h2>
+                        <p class="text-center">This quiz contains {{ quiz.questions_count }} questions.</p>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'courses:lesson_quiz' lesson.id quiz.id %}" class="btn btn-secondary me-md-2">Back to Quizzes</a>
+                            <a href="{% url 'courses:quiz_edit' quiz.id %}" class="btn btn-primary">Edit Quiz</a>
+                        </div>
+                    </div>
+                </div>
+
+            {%else%}
+                
+               <h4>Lesson Quizzes</h4>
+
+<a href="{% url 'courses:quiz_create' lesson.id %}"
+   class="btn btn-success mb-3">
+  ➕ Create Quiz
+</a>
+
+<ul class="list-group">
+  {% for quiz in quizzes %}
+  <li class="list-group-item d-flex justify-content-between">
+    {{ quiz.title }}
+    <div>
+      <a href="{% url 'courses:quiz_edit' quiz.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+      <a href="{% url 'courses:quiz_delete' quiz.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
+    </div>
+  </li>
+  {% empty %}
+  <li class="list-group-item text-muted">No quizzes yet</li>
+  {% endfor %}
+</ul>
+
+            {%endif%}
+        </div>
+    </div>
+</div>
+{% endblock %}  
