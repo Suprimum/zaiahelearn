@@ -79,16 +79,28 @@ class Lesson(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def get_absolute_url(self):
+        return reverse('courses:lesson_detail',args=(self.course.slug,self.course.id,self.id))
 
 
 class LessonProgress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+
+    progress_percent = models.FloatField(default=0)
+    last_scroll_position = models.IntegerField(default=0)
+
     completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
 
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         unique_together = ('user', 'lesson')
+
+    def __str__(self):
+        return f"{self.user} - {self.lesson} - ({self.progress_percent}%)"
 
 
 
@@ -163,7 +175,8 @@ class LessonQuizAttempt(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE,null=True)
 
     questions = models.JSONField(null=True)
-    user_answers = models.JSONField(null=True, blank=True)
+    answers = models.JSONField(null=True, blank=True)
+    passed = models.BooleanField(default=False)
 
     score = models.IntegerField(default=0)
     total = models.IntegerField(default=0)

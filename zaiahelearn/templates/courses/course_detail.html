@@ -1,39 +1,71 @@
 {% extends "base.html" %}
+{% load dict_extra %}
 
+{% block exra_css %}
+<style>
+.course-navbar {
+    top: 0;
+    z-index: 1030;
+}
+
+.sidebar-sticky {
+    top: 100px;
+    margin-top: 20%;
+}
+
+.progress-smooth .progress-bar {
+    transition: width 0.4s ease-in-out;
+}
+
+</style>
+{%endblock%}
 
 
 {% block hero-section %}
      <section class="hero-section text-white text-center">
         <div class="container">
-            <h1 class="display-4 fw-bold">{{ course.title }}</h1>
+            <h1 class="display-4 fw-bold"><span class="text-warning">{{course.level}}</span> {{ course.title }}</h1>
             <p class="lead mt-3">Continue your learning journey with this course.</p>
         </div>
     </section>
 {% endblock %}
 
 {% block navbar %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
-        <div class="container-fluid"> 
-            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
-                <span class="navbar-toggler-icon"></span> 
-            </button> 
-            <div class="collapse navbar-collapse" id="navbarNav"> 
-                <ul class="navbar-nav ms-auto"> 
-                    <li class="nav-item"> 
-                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
-                    </li> 
-                    <li class="nav-item"> 
-                        <a class="nav-link" href="{% url 'courses:enroll_courses' %}">Courses</a> 
-                    </li> 
-                    <li class="nav-item"> 
-                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
-                    </li>
-                </ul>
-            </div>
-        </div> 
-    </nav>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top course-navbar" style="margin-top: -7.1vh; z-index: 10000;">
+  <div class="container-fluid">
+
+    <!-- Sidebar Toggle (Mobile Only) -->
+    <button class="btn btn-outline-light d-lg-none me-2"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#lessonSidebar">
+      ☰
+    </button>
+
+    <a class="navbar-brand fw-bold" href="#">ZaiaheLearn</a>
+
+    <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'home' %}">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'courses:enroll_courses' %}">Courses</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-danger" href="{% url 'account_logout' %}">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
 {% endblock %}
+
 
 
 {% block content %}
@@ -45,82 +77,78 @@
     <a href="{% url 'courses:dashboard' %}" class="btn btn-outline-secondary btn-sm">
       ← Back to Dashboard
     </a>
+
+    <a href="{% url 'courses:next_lesson' course.slug course.id cur_lesson.id %}"
+     class="btn btn-outline-secondary btn-sm" style="margin-left: -10%;">
+    ← Previous
+     </a>
+  
     <span class="text-muted small">
       Course: <strong>{{ course.title }}</strong>
     </span>
+  
+  <a href="{% url 'courses:prev_lesson' course.slug course.id cur_lesson.id %}"
+     class="btn btn-primary btn-sm">
+    Next →
+  </a>
+
   </div>
 
-  <!-- Reading Progress -->
-  <div class="progress mb-4 sticky-top" style="height: 6px; top: 60px;">
-    <div id="readingProgress" class="progress-bar bg-success" style="width: 0%;"></div>
-  </div>
-
+ 
   <div class="row">
 
-    <!-- LEFT SIDEBAR (STICKY) -->
-    <div class="col-lg-3 mb-4">
-      <div class="" style="top: 90px;">
+      <!-- DESKTOP SIDEBAR -->
+  <div class="col-lg-3 d-none d-lg-block">
+    <div class="position-sticky sidebar-sticky sticky-top" style="top: 65px;">
 
-        <!-- Lessons -->
-        <div class="card shadow-sm mb-4">
-          <div class="card-body p-2">
-            <h6 class="fw-bold mb-2">Lessons</h6>
-
-            <div class="list-group list-group-flush small">
-              {% for l in lessons %}
-              <a href="{% url 'courses:lesson_detail' course.slug course.id l.id %}"
-                 class="list-group-item list-group-item-action {% if l.id == cur_lesson.id %}active{% endif %}">
-                {{ l.title }}
-              </a>
-              {% endfor %}
+      <!-- Progress Card -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h6 class="fw-bold">Reading Progress</h6>
+          <div class="progress mb-2 progress-smooth">
+            <div id="readingProgress"
+                 class="progress-bar bg-success"
+                 style="width:0%">
             </div>
           </div>
+          <small class="text-muted">
+            <span id="progressText">0%</span> completed
+          </small>
         </div>
-
-        <!-- Lesson Quiz -->
-        <div class="card shadow-sm mb-4">
-          <div class="card-body">
-            <h6 class="fw-bold">Lesson Quiz</h6>
-            <p class="text-muted small mb-2">
-              Check your understanding.
-            </p>
-
-            {% if cur_lesson.quizzes.count > 0 %} 
-              <a href="{% url 'courses:lesson_quiz_page' cur_lesson.id %}" class="btn btn-primary btn-sm w-100">
-                Start Quiz
-              </a>
-            {% else %}
-              <span class="badge bg-secondary">Coming soon</span>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Other Enrolled Courses -->
-        <div class="card shadow-sm">
-          <div class="card-body p-2">
-            <h6 class="fw-bold mb-2">Your Courses</h6>
-
-            <ul class="list-group list-group-flush small">
-              {% for c in enrolled_courses %}
-              {% if c.course.id != course.id %}
-              <li class="list-group-item">
-                <a href="{% url 'courses:course_detail' c.course.slug c.course.id %}"
-                   class="text-decoration-none {% if c.course.lessons.count == 0 %}disabled{% endif %}">
-                  {{ c.course.title|truncatechars:18 }}
-                </a>
-              </li>
-              {% endif %}
-              {% empty %}
-              <li class="list-group-item text-muted">
-                No other courses
-              </li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-
       </div>
+
+      <!-- RESET PROGRESS -->
+      <div class="">
+          <button class="btn btn-outline-danger mb-3 " onclick="reset_progress()">Reset Progress</button>
+      </div>
+      <!-- Lessons -->
+      <div class="card shadow-sm">
+        <div class="card-body p-2">
+          <h6 class="fw-bold mb-2">Lessons</h6>
+          <div class="list-group list-group-flush small">
+            {% for l in lessons %}
+            <a href="{% url 'courses:lesson_detail' course.slug course.id l.id %}"
+               class="list-group-item list-group-item-action {% if l.id == cur_lesson.id %}active{% endif %}">
+              {{ l.title }}
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mt-4">
+          <div class="card-body p-2">
+            <h6 class="fw-bold mb-2">Lesson Quiz</h6>
+            <a href="{% url 'courses:lesson_quiz_page' cur_lesson.id %}"
+              class=" fw-bold btn btn-outline-success mb-2">
+              🎯 Take Lesson Quiz
+            </a>
+          </div>
+      </div>
+
     </div>
+  </div>
+
 
     <!-- MAIN CONTENT -->
     <div class="col-lg-9">
@@ -156,8 +184,18 @@
             <div class="tab-pane fade show active" id="lessonTab">
               <div class="math-content" id="lessonContent">
                 {{ lesson_content|safe }}
+
+                 <!-- Auto Next Lesson -->
+              
+                    <div class="alert alert-success text-center mt-4">
+                      <strong>Lesson completed 🎉</strong><br>
+                    <a class="btn btn-sm btn-success mt-2" href="{% url 'courses:prev_lesson' course.slug course.id cur_lesson.id %}">
+                        Next Lesson →
+                    </a>
+                    </div>
+                
               </div>
-            </div>
+  
 
             <!-- Video Lessons -->
             <div class="tab-pane fade" id="videoTab">
@@ -195,26 +233,146 @@
   </div>
 </div>
 
+<!-- MOBILE OFFCANVAS -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="lessonSidebar">
+  <div class="offcanvas-header border-bottom">
+    <h5 class="offcanvas-title fw-bold">Course Menu</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+
+  <div class="offcanvas-body">
+
+    <div class="mb-4">
+      <h6 class="fw-bold">Reading Progress</h6>
+      <div class="progress mb-2 progress-smooth">
+        <div id="readingProgressMobile"
+             class="progress-bar bg-success"
+             style="width:0%">
+        </div>
+      </div>
+      <small class="text-muted">
+        <span id="progressTextMobile">0%</span> completed
+      </small>
+    </div>
+
+    <div class="">
+          <button class="btn btn-outline-warning mb-3 text-danger" onclick="reset_progress()">Reset Progress</button>
+      </div>
+
+    <div class="list-group list-group-flush small">
+      {% for l in lessons %}
+      <a href="{% url 'courses:lesson_detail' course.slug course.id l.id %}"
+         class="list-group-item list-group-item-action {% if l.id == cur_lesson.id %}active{% endif %}">
+        {{ l.title }}
+      </a>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+
 {% endblock %}
+
 
 {% block extra_js %}
 <script>
-/* ================= READING PROGRESS ================= */
-document.addEventListener("scroll", function () {
+document.addEventListener("DOMContentLoaded", function () {
 
+  const lessonId = "{{ cur_lesson.id }}";
   const content = document.getElementById("lessonContent");
+
   const progressBar = document.getElementById("readingProgress");
+  const progressText = document.getElementById("progressText");
 
-  if (!content || !progressBar) return;
+  const progressBarMobile = document.getElementById("readingProgressMobile");
+  const progressTextMobile = document.getElementById("progressTextMobile");
 
-  const contentTop = content.offsetTop;
-  const contentHeight = content.offsetHeight;
-  const scrollPos = window.scrollY + window.innerHeight;
+  let maxProgress = parseFloat(`{{ saved_percent|default:0 }}`)
+  let lastScroll = parseFloat(`{{ saved_scroll|default:0 }}`)
+  let lastScrollY = window.scrollY;
 
-  let percent = ((scrollPos - contentTop) / contentHeight) * 100;
-  percent = Math.min(100, Math.max(0, percent));
+  // Restore scroll position
+  window.scrollTo(0, lastScroll);
+  updateUI(maxProgress);
 
-  progressBar.style.width = percent + "%";
+  function updateUI(percent) {
+      percent = Math.round(percent);
+
+      if (progressBar) {
+          progressBar.style.width = percent + "%";
+          progressText.textContent = percent + "%";
+      }
+
+      if (progressBarMobile) {
+          progressBarMobile.style.width = percent + "%";
+          progressTextMobile.textContent = percent + "%";
+      }
+  }
+
+  function calculateProgress() {
+      const totalHeight = content.scrollHeight - window.innerHeight;
+      if (totalHeight <= 0) return 100;
+
+      const scrollTop = window.scrollY - content.offsetTop;
+      return Math.max(0, Math.min(100, (scrollTop / totalHeight) * 100));
+  }
+
+  // 🔥 Only increase progress when scrolling down
+  window.addEventListener("scroll", function () {
+
+      if (window.scrollY > lastScrollY) {
+
+          let percent = calculateProgress();
+
+          if (percent > maxProgress) {
+              maxProgress = percent;
+              updateUI(maxProgress);
+          }
+      }
+
+      lastScrollY = window.scrollY;
+  });
+
+  // 🔥 Save progress before leaving page
+  function saveProgress() {
+
+      fetch("{% url 'courses:save_lesson_progress' cur_lesson.id %}", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": "{{ csrf_token }}"
+          },
+          body: JSON.stringify({
+              lesson_id: lessonId,
+              percent: maxProgress,
+              scroll: window.scrollY
+          })
+      });
+  }
+
+  window.addEventListener("beforeunload", saveProgress);
+
+
+  // 🔥 Reset Progress
+  window.reset_progress = function () {
+
+      fetch("{% url 'courses:reset_lesson_progress' cur_lesson.id %}", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": "{{ csrf_token }}"
+          },
+          body: JSON.stringify({
+              lesson_id: lessonId
+          })
+      }).then(() => {
+          maxProgress = 0;
+          updateUI(0);
+          window.scrollTo(0, 0);
+      });
+  };
+
 });
 </script>
+
 {% endblock %}

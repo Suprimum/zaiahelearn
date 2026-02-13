@@ -27,13 +27,13 @@ def lesson_quiz_page(request, lesson_id):
         quiz__lesson=lesson
     ).order_by("-completed_at")
 
-    print ('attempts: ',attempts)
 
     # Map quiz_id -> latest attempt
     attempt_map = {}
     for attempt in attempts:
         if attempt.quiz_id not in attempt_map:
-            attempt_map[attempt.quiz_id] = attempt
+            attempt_map[str(attempt.quiz_id)] = attempt
+
 
     return render(request, "courses/student/lesson_quiz_page.html", {
         "lesson": lesson,

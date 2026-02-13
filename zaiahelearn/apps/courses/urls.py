@@ -30,5 +30,9 @@ urlpatterns = [
     path("lesson/quiz/<int:quiz_id>/attempt/", views.quiz_attempt, name="quiz_attempt"),
     path("lesson/<int:lesson_id>/quizzes/",views.lesson_quiz_page,name="lesson_quiz_page"),
     path("lesson/quiz/attempt/<int:attempt_id>/",views.quiz_result,name="quiz_result"),
+    path("lesson/<int:lesson_id>/progress/save/", views.save_lesson_progress, name="save_lesson_progress"),
+    path("lesson/<int:lesson_id>/progress/reset/", views.reset_lesson_progress, name="reset_lesson_progress"),
+    path("course/<slug:slug>/<int:course_id>/lesson/<int:lesson_id>/next/",views.next_lesson,name="next_lesson"),
+    path("course/<slug:slug>/<int:course_id>/lesson/<int:lesson_id>/prev/",views.prev_lesson,name="prev_lesson"),
 
 ]

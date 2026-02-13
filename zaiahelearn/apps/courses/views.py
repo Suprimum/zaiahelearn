@@ -11,6 +11,45 @@ from .course_views import *
 
 
 
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+import json
+
+
+
+
+
+
+@login_required
+@require_POST
+def save_lesson_progress(request, lesson_id):
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+
+    data = json.loads(request.body)
+    
+    percent = float(data.get("percent", 0))
+    scroll_position = int(data.get("scroll", 0))
+
+    progress, created = LessonProgress.objects.get_or_create(
+        user=request.user,
+        lesson=lesson
+    )
+
+    print ('progress data: ',data)
+
+    progress.progress_percent = percent
+    progress.last_scroll_position = scroll_position
+
+    # Auto mark completed at 90%
+    if percent >= 90 and not progress.completed:
+        progress.completed = True
+        progress.completed_at = timezone.now()
+
+    progress.save()
+
+    return JsonResponse({"status": "success"})
+
 
 
 def contact_us(request):
@@ -36,6 +75,18 @@ def teacher_lessons(request):
     })
 
 
+@login_required
+@require_POST
+def reset_lesson_progress(request, lesson_id):
+    data = json.loads(request.body)
+
+    LessonProgress.objects.filter(
+        user=request.user,
+        lesson_id=int(lesson_id)
+    ).update(percent=0, scroll_position=0)
+
+    return JsonResponse({"status": "reset"})
+
 
 @login_required
 def dashboard(request):
@@ -45,12 +96,32 @@ def dashboard(request):
         enrollment__user=request.user
     )
 
+    completed_lessons = LessonProgress.objects.filter(
+        user=request.user,
+        completed=True
+    )
+
+    quizzes_taken = LessonQuizAttempt.objects.filter(
+        user=request.user,
+        completed_at__isnull=False
+    )
+
+    total_lessons = Lesson.objects.filter(
+        course__in=enrolled_courses
+    ).count()
+
+    completed_count = completed_lessons.count()
+
     available_courses = Course.objects.exclude(
         enrollment__user=request.user
     )
 
+    overall_progress = 0
+    if total_lessons > 0:
+        overall_progress = round((completed_count / total_lessons) * 100, 1)
+
     popular_lessons = {
-        course.id: Lesson.objects.filter(course=course)
+        str(course.id): Lesson.objects.filter(course=course)
                                   .order_by('-views')[:3]
         for course in enrolled_courses
     }
@@ -59,9 +130,11 @@ def dashboard(request):
         "courses": courses,
         "courses_count": enrolled_courses.count(),
         "lessons_completed": LessonProgress.objects.filter(user=request.user, completed=True).count(),
-        "quizzes_taken": 0,  # To be implemented
+        "quizzes_taken": quizzes_taken.count(),
         "enrolled_courses": enrolled_courses,
         "available_courses": available_courses,
+        "total_lessons": total_lessons,
+        "overall_progress": overall_progress,
         "popular_lessons": popular_lessons,
     })
 

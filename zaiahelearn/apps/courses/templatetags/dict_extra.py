@@ -1,5 +1,5 @@
 from django import template
-from zaiahelearn.apps.courses.models import Question
+from zaiahelearn.apps.courses.models import Question, Lesson
 
 register = template.Library()
 
@@ -26,3 +26,16 @@ def choice_answer(question_id, letter):
     print ("question: ",question)
     
     return question.get_choice_answer(letter)
+
+
+
+@register.filter
+def next_id(cur_lesson):
+    cur_id = cur_lesson.id
+    next_id = None
+    
+    try:
+        next_id = Lesson.objects.get(id=(cur_id+1))
+        return next_id
+    except:
+        return Lesson.objects.first().id        

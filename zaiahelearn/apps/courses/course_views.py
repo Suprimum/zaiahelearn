@@ -63,12 +63,20 @@ def course_detail(request, slug, id):
         lesson.views += 1
         lesson.save(update_fields=['views'])
 
+        lesson_progress = LessonProgress.objects.filter(
+            user=request.user,
+            lesson=lesson
+        ).first()
+
     return render(request, "courses/course_detail.html", {
         "course": course,
         "lessons": lessons,
         "cur_lesson": lesson,
         "lesson_content": lesson.content_html or render_lesson_content(lesson) or "Content coming soon...",
         "enrolled_courses": enroll_courses,
+        "lesson_progress": lesson_progress,
+        "saved_percent": lesson_progress.progress_percent if lesson_progress else 0,
+        "saved_scroll": lesson_progress.last_scroll_position if lesson_progress else 0,
     })
 
 
@@ -84,15 +92,40 @@ def lesson_detail(request, slug, id, lesson_id):
         lesson.views += 1
         lesson.save(update_fields=['views'])
 
+        lesson_progress = LessonProgress.objects.filter(
+            user=request.user,
+            lesson=lesson
+        ).first()
+
+
     return render(request, "courses/course_detail.html", {
         "course": course,
         "cur_lesson": lesson,
         "lessons": lessons,
         "lesson_content": lesson.content_html or render_lesson_content(lesson) or "Content coming soon...",
         "enrolled_courses": enroll_courses,
+        "lesson_progress": lesson_progress
     })
 
 
+@login_required
+def next_lesson(request,slug,course_id,lesson_id):
+    try:
+        next_l = Lesson.objects.get(id=lesson_id+1)
+        return lesson_detail(request,slug,course_id,next_l.id)
+    except:
+        next_l = Lesson.objects.first()
+        return lesson_detail(request,slug,course_id,next_l.id)
+    
+
+@login_required
+def prev_lesson(request,slug,course_id,lesson_id):
+    try:
+        prev_l = Lesson.objects.get(id=lesson_id-1)
+        return lesson_detail(request,slug,course_id,prev_l.id)
+    except:
+        prev_l = Lesson.objects.last()
+        return lesson_detail(request,slug,course_id,prev_l.id)
 
 
 def course_list(request):
@@ -125,6 +158,8 @@ def delete_lesson(request, lesson_id):
         return redirect("courses:teacher_dashboard")
 
     return redirect("courses:lesson_edit", lesson_id=lesson.id)
+
+
 
 @login_required
 @teacher_required

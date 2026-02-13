@@ -87,7 +87,7 @@
 <!-- ========================= -->
 
 <script>
-  const timeLimitMinutes = {{ quiz.time_limit|default:10 }};
+  const timeLimitMinutes = parseInt(`{{ quiz.time_limit|default:10 }}`);
   let totalSeconds = timeLimitMinutes * 60;
 
   const timerElement = document.getElementById("timer");
