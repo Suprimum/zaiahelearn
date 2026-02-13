@@ -96,7 +96,7 @@
                         <a class="nav-link" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a> 
                     </li> 
                     <li class="nav-item"> 
-                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                        <a class="nav-link text-danger" href="{% url 'account_logout' %}">Logout</a>
                     </li>
                 </ul>
             </div> 
@@ -204,7 +204,7 @@
 
         <div id="questionContainer">
           {% for question in questions %}
-            {% include "courses/partials/question_form.html" with question=question %}
+            {% include "courses/partials/question_form.html" with question=question uid=question.id|default:forloop.counter|default:"new" %}
           {% empty %}
             {% include "courses/partials/question_form.html" %}
           {% endfor %}
@@ -257,6 +257,10 @@
                 🧠 Add from Question Bank
             </a>
             {%endif%}
+
+            <a href="{% url 'courses:lesson_quiz_list' lesson.id %}" class="btn btn-secondary w-100 mb-2">
+              Cancel
+            </a>
           </div>
         </div>
 

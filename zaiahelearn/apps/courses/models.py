@@ -1,7 +1,7 @@
 from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import User
-
+from embed_video.fields import EmbedVideoField
 
 
 class UserRole(models.TextChoices):
@@ -48,7 +48,6 @@ class Course(models.Model):
         return f"{self.title} ({self.level})"
 
 
-
 class Lesson(models.Model):
     STATUS_CHOICES = [
         ('draft', 'Draft'),
@@ -60,7 +59,6 @@ class Lesson(models.Model):
 
     content_html = models.TextField(blank=True)
     content_markdown = models.TextField(blank=True)
-
 
     status = models.CharField(
         max_length=10,
@@ -82,6 +80,12 @@ class Lesson(models.Model):
     
     def get_absolute_url(self):
         return reverse('courses:lesson_detail',args=(self.course.slug,self.course.id,self.id))
+
+
+class Videos(models.Model):
+    lesson = models.ForeignKey(Lesson,on_delete=models.CASCADE,related_name='video_lessons')
+    title = models.CharField(max_length=255)
+    video_url = EmbedVideoField(null=True,blank=True)
 
 
 class LessonProgress(models.Model):

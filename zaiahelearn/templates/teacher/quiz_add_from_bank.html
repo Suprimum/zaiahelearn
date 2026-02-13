@@ -1,76 +1,227 @@
 {% extends "base.html" %}
 
-
-
-
 {% block hero-section %}
-    <section class="hero-section text-white text-center">
-        <div class="container">
-            <h1 class="display-4 fw-bold">
-                 ➕ Add Questions to {{ quiz.title |title}}
-            </h1>
-            <p class="lead mt-3">
-                Add questions from your questions bank to the quiz 
-            </p>
-        </div>
-    </section>
+<section class="hero-section text-white text-center">
+  <div class="container">
+    <h1 class="display-5 fw-bold">➕ Add Questions to {{ quiz.title|title }}</h1>
+    <p class="lead mt-2">Filter, preview, and import questions into this quiz</p>
+  </div>
+</section>
 {% endblock %}
+
 
 {% block navbar %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
-        <div class="container-fluid"> 
-            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
-                <span class="navbar-toggler-icon"></span> 
-            </button> 
-            <div class="collapse navbar-collapse" id="navbarNav"> 
-                <ul class="navbar-nav ms-auto"> 
-                    <li class="nav-item"> 
-                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
-                    </li> 
-                    <li class="nav-item"> 
-                        <a class="nav-link" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a> 
-                    </li> 
-                    <li class="nav-item"> 
-                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
-                    </li>
-                </ul>
-            </div> 
-        </div>
-    </nav>
-{% endblock %}
-
-{% block content %}
-
-<div class="container px-lg-5">
-
-  <h4 class="fw-bold mb-3">
-    ➕ Add Questions to "{{ quiz.title |title}}"
-  </h4>
-
-  <form method="post">
-    {% csrf_token %}
-
-    <div class="list-group mb-4">
-      {% for q in questions %}
-      <label class="list-group-item">
-        <input type="checkbox" name="question_ids" value="{{ q.id }}">
-        <span class="badge bg-secondary me-2">{{ q.difficulty }}</span>
-        {{ q.question.content_html|safe|truncatechars:100 }}
-      </label>
-      {% endfor %}
-    </div>
-
-    <button class="btn btn-primary">
-      Import Selected Questions
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm" style="margin-top:-7.1vh;">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="#">ZaiaheLearn</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
     </button>
 
-    <a href="{% url 'courses:lesson_quiz_list' quiz.lesson.id %}"
-       class="btn btn-outline-secondary ms-2">
-      Cancel
-    </a>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link text-danger" href="{% url 'account_logout' %}">Logout</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endblock %}
 
-  </form>
+
+{% block content %}
+<div class="container py-4 px-lg-5">
+
+<!-- ================= FILTER FORM ================= -->
+<form method="get" class="card shadow-sm mb-4">
+  <div class="card-body row g-3 align-items-end">
+
+    <div class="col-md-3">
+      <label class="fw-bold small">Difficulty</label>
+      <select class="form-select" name="difficulty">
+        <option value="">All</option>
+        <option value="easy" {% if request.GET.difficulty == "easy" %}selected{% endif %}>Easy</option>
+        <option value="medium" {% if request.GET.difficulty == "medium" %}selected{% endif %}>Medium</option>
+        <option value="hard" {% if request.GET.difficulty == "hard" %}selected{% endif %}>Hard</option>
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label class="fw-bold small">Topic</label>
+      <input type="text" name="topic"
+             value="{{ request.GET.topic }}"
+             class="form-control"
+             placeholder="Search topic...">
+    </div>
+
+    <div class="col-md-2">
+      <button class="btn btn-outline-primary w-100" type="submit">
+        Apply Filters
+      </button>
+    </div>
+
+  </div>
+</form>
+
+
+<!-- ================= IMPORT FORM ================= -->
+<form method="post">
+{% csrf_token %}
+
+<div class="row g-3">
+
+{% for q in page_obj %}
+<div class="col-md-6 col-lg-4">
+
+  <div class="card h-100 shadow-sm border-0 bg-light">
+    <div class="card-body d-flex flex-column">
+
+      <!-- Checkbox -->
+      <div class="form-check mb-2">
+        <input class="form-check-input question-checkbox"
+               type="checkbox"
+               name="question_ids"
+               value="{{ q.id }}">
+        <label class="form-check-label fw-bold">Select Question</label>
+      </div>
+
+      <!-- Difficulty -->
+      <div class="mb-2">
+        <span class="badge
+          {% if q.difficulty == 'easy' %}bg-success
+          {% elif q.difficulty == 'medium' %}bg-warning text-dark
+          {% else %}bg-danger{% endif %}">
+          {{ q.difficulty|title }}
+        </span>
+      </div>
+
+      <!-- Preview text -->
+      <div class="small text-muted flex-grow-1">
+        {% if q.question.content_html %}
+          {{ q.question.content_html|safe|truncatechars:120 }}
+        {% else %}
+          {{ q.question.content_markdown|safe|truncatechars:120 }}
+        {% endif %}
+      </div>
+
+      <!-- SAFE MODAL BUTTON -->
+      <button type="button"
+              class="btn btn-sm btn-outline-primary mt-3"
+              data-bs-toggle="modal"
+              data-bs-target="#previewModal{{ q.id }}">
+        👀 Preview
+      </button>
+
+    </div>
+  </div>
 
 </div>
+
+
+<!-- ================= MODAL ================= -->
+<div class="modal fade" id="previewModal{{ q.id }}" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Question Preview</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        {% if q.question.content_html %}
+          {{ q.question.content_html|safe }}
+        {% else %}
+          <pre>{{ q.question.content_markdown }}</pre>
+        {% endif %}
+
+        <hr>
+
+        <ul class="list-group">
+          {% for c in q.question.choices.all %}
+          <li class="list-group-item {% if c.is_correct %}list-group-item-success{% endif %}">
+            {{ c.label }}. {{ c.choice }}
+          </li>
+          {% endfor %}
+        </ul>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endfor %}
+</div>
+
+
+<!-- ================= PAGINATION ================= -->
+<div class="d-flex justify-content-center mt-4">
+<nav>
+<ul class="pagination">
+
+{% if page_obj.has_previous %}
+<li class="page-item">
+  <a class="page-link"
+     href="?page={{ page_obj.previous_page_number }}&difficulty={{ request.GET.difficulty }}&topic={{ request.GET.topic }}">
+     Previous
+  </a>
+</li>
+{% endif %}
+
+<li class="page-item active">
+  <span class="page-link">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </span>
+</li>
+
+{% if page_obj.has_next %}
+<li class="page-item">
+  <a class="page-link"
+     href="?page={{ page_obj.next_page_number }}&difficulty={{ request.GET.difficulty }}&topic={{ request.GET.topic }}">
+     Next
+  </a>
+</li>
+{% endif %}
+
+</ul>
+</nav>
+</div>
+
+
+<!-- ================= ACTION BAR ================= -->
+<div class="sticky-bottom bg-white border-top py-3 d-flex justify-content-between mt-4">
+
+<a href="{% url 'courses:quiz_edit' quiz.lesson.id quiz.id %}"
+   class="btn btn-outline-secondary">
+   ← Back to Quiz
+</a>
+
+<button type="button"
+        class="btn btn-outline-secondary"
+        onclick="toggleAll()">
+        📌 Select All
+</button>
+
+<button class="btn btn-primary px-4" type="submit">
+  Import Selected Questions
+</button>
+
+</div>
+
+</form>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+function toggleAll(){
+  const boxes = document.querySelectorAll(".question-checkbox");
+  const allChecked = [...boxes].every(b => b.checked);
+  boxes.forEach(b => b.checked = !allChecked);
+}
+</script>
 {% endblock %}

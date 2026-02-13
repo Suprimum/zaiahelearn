@@ -10,7 +10,6 @@
     <!-- Question Editor Tabs -->
     <!-- ============================= -->
 
-    {% with uid=question.id|default:forloop.counter|default:"new" %}
     <ul class="nav nav-tabs mb-2">
       <li class="nav-item">
         <button type="button"
@@ -73,7 +72,7 @@
       </div>
 
     </div>
-    {% endwith %}
+    
 
     <!-- ============================= -->
     <!-- OPTIONS -->

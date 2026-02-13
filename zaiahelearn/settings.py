@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     #third party apps
     'allauth',
     'allauth.account',
+    'embed_video',
     #'allauth.socialaccount',
     'django_extensions',
     #local apps

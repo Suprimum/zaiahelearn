@@ -30,12 +30,13 @@ def choice_answer(question_id, letter):
 
 
 @register.filter
-def next_id(cur_lesson):
-    cur_id = cur_lesson.id
-    next_id = None
-    
-    try:
-        next_id = Lesson.objects.get(id=(cur_id+1))
-        return next_id
-    except:
-        return Lesson.objects.first().id        
+def grade(pct,pass_score):
+    pct = int(pct)
+    pass_score = int(pass_score)
+
+    if pct > pass_score:
+        return "bg-success"
+    elif pct == pass_score:
+        return "bg-warning"
+    else:
+        return "bg-danger"

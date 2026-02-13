@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load dict_extra %}
+{% load embed_video_tags %}
 
 {% block exra_css %}
 <style>
@@ -199,10 +200,17 @@
 
             <!-- Video Lessons -->
             <div class="tab-pane fade" id="videoTab">
-              {% if lesson.video_url %}
-                <div class="ratio ratio-16x9">
-                  <iframe src="{{ lesson.video_url }}" allowfullscreen></iframe>
+              {% if lesson.video_lessons.all.count > 0 %}
+              <div class="d-flex flex-wrap">
+                {% for item in lesson.videos.all %}
+                <div class="ratio ratio-16x9 card ">
+                  <div class=" card-header ">{{item.title}}</div>
+                  <div class="card-body ">
+                    {% video item.video_url '426x240' %}
+                  </div>
                 </div>
+                {% endfor %}
+              </div>
               {% else %}
                 <p class="text-muted">No video available for this lesson.</p>
               {% endif %}

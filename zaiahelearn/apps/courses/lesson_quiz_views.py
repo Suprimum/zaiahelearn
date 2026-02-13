@@ -5,10 +5,11 @@ from django.utils import timezone
 from .forms import QuizForm
 from .utils import teacher_required, save_question
 from django.contrib import messages
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Q
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 
-
+from collections import Counter
 
 
 @login_required
@@ -70,14 +71,59 @@ def quiz_attempts(request, quiz_id):
 
     stats = attempts.aggregate(
         avg_score=Avg("score"),
-        total_attempts=Count("id")
+        total_attempts=Count("id"),
+        pass_count=Count("id",filter=Q(score__gte=(quiz.pass_score * attempts.first().total / 100))),
     )
 
-    return render(request, "courses/quiz_attempts.html", {
+    stats["pass_rate"] = (stats["pass_count"]/stats["total_attempts"]*100) if stats["total_attempts"] else 0
+    
+    # ✅ TOP PERFORMER
+    top_attempt = attempts.order_by("-score").first()
+
+    # ✅ SCORE DISTRIBUTION
+    distribution = {
+        "0-39": 0,
+        "40-59": 0,
+        "60-79": 0,
+        "80-100": 0,
+    }
+
+    for a in attempts:
+        pct = (a.score / a.total) * 100 if a.total else 0
+        if pct < 40:
+            distribution["0-39"] += 1
+        elif pct < 60:
+            distribution["40-59"] += 1
+        elif pct < 80:
+            distribution["60-79"] += 1
+        else:
+            distribution["80-100"] += 1
+
+    # ✅ QUESTION DIFFICULTY ANALYSIS
+    difficulty_counter = Counter()
+
+    for attempt in attempts:
+        if not attempt.answers: continue
+        for qid, chosen in attempt.answers.items():
+            question = quiz.questions.filter(id=qid).first()
+            if not question:
+                continue
+            correct = question.choices.filter(is_correct=True).first()
+            if correct and chosen != correct.label:
+                difficulty_counter[str(question)] += 1
+
+    hardest_questions = difficulty_counter.most_common(5)
+
+    context = {
         "quiz": quiz,
         "attempts": attempts,
-        "stats": stats
-    })
+        "stats": stats,
+        "top_attempt": top_attempt,
+        "distribution": distribution,
+        "hardest_questions": hardest_questions,
+    }
+
+    return render(request, "courses/quiz_attempts.html", context)
 
 
 @login_required
@@ -100,6 +146,22 @@ def quiz_add_from_bank(request, quiz_id):
         teacher=request.user
     )
 
+    
+    difficulty = request.GET.get("difficulty")
+    topic = request.GET.get("topic")
+
+    
+    if difficulty:
+        questions = questions.filter(difficulty=difficulty)
+
+    if topic:
+        questions = questions.filter(question__content_html__icontains=topic)
+
+    
+    paginator = Paginator(questions, 12)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    
     if request.method == "POST":
         ids = request.POST.getlist("question_ids")
 
@@ -123,7 +185,8 @@ def quiz_add_from_bank(request, quiz_id):
 
     return render(request, "teacher/quiz_add_from_bank.html", {
         "quiz": quiz,
-        "questions": questions
+        "questions": questions,
+        "page_obj": page_obj,
     })
 
 
@@ -162,7 +225,8 @@ def lesson_quiz(request, lesson_id, quiz_id):
 def quiz_create_edit(request, lesson_id, quiz_id=None):
     lesson = get_object_or_404(Lesson, id=lesson_id)
     quiz = None
-
+    form = None
+    
     if quiz_id: #edit quiz
         quiz = get_object_or_404(Quiz, id=quiz_id, lesson=lesson)
 
