@@ -54,7 +54,7 @@ class Lesson(models.Model):
         ('published', 'Published'),
     ]
 
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course')
     title = models.CharField(max_length=200)
 
     content_html = models.TextField(blank=True)
@@ -81,11 +81,6 @@ class Lesson(models.Model):
     def get_absolute_url(self):
         return reverse('courses:lesson_detail',args=(self.course.slug,self.course.id,self.id))
 
-
-class Videos(models.Model):
-    lesson = models.ForeignKey(Lesson,on_delete=models.CASCADE,related_name='video_lessons')
-    title = models.CharField(max_length=255)
-    video_url = EmbedVideoField(null=True,blank=True)
 
 
 class LessonProgress(models.Model):
@@ -248,10 +243,31 @@ class TeacherApplication(models.Model):
         return f"{self.user.username} – {self.status}"
     
 
+
+
 class Video(models.Model):
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='videos')
-    title = models.CharField(max_length=200)
-    url = models.URLField()
+    lesson = models.ForeignKey(Lesson,on_delete=models.CASCADE,related_name='video_lessons')
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+
+    video_url = EmbedVideoField(verbose_name="Video URL",null=True)
+
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"{self.lesson.title} — {self.title}"
+
+    @property
+    def has_description(self):
+        return bool(self.description.strip()) if self.description else False
+    
+
+
 
 class Resource(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='resources')

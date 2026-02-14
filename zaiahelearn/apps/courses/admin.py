@@ -1,5 +1,10 @@
 from django.contrib import admin
-from .models import Course, Lesson, TeacherApplication, Teacher, UserProfile, Quiz, Question, Choice, QuestionBank, LessonQuizAttempt
+from .models import (
+    Course, Lesson, TeacherApplication, 
+    Teacher, UserProfile, Quiz, Question, 
+    Choice, QuestionBank, LessonQuizAttempt,
+    Video
+    )
 
 
 
@@ -67,3 +72,9 @@ class QuestionBankAdmin(admin.ModelAdmin):
 class LessonQuizAttemptAdmin(admin.ModelAdmin):
     list_display = ['user','lesson','quiz',]
 
+@admin.register(Video)
+class VideoAdmin(admin.ModelAdmin):
+    list_display = ['lesson','title','video_url']
+
+    def video_url(self,model):
+        return model.title

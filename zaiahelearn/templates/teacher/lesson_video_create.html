@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block hero-section %}
+<section class="hero-section text-white text-center">
+  <div class="container">
+    <h1 class="display-5 fw-bold">
+      {% if video %} ✏️ Edit Lesson Video {% else %} ➕ Add Lesson Video {% endif %}
+    </h1>
+    <p class="lead mt-2">
+      Attach a video to enrich this lesson
+    </p>
+  </div>
+</section>
+{% endblock %}
+
+
+{% block content %}
+<div class="container py-5" style="max-width:800px;">
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+
+      <h5 class="fw-bold mb-4">
+        🎬 Video Details
+      </h5>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- Title -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Video Title</label>
+          {{ form.title }}
+          {{ form.title.errors }}
+        </div>
+
+        <!-- URL -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Video URL</label>
+          {{ form.video_url }}
+          <div class="form-text">
+            Paste YouTube, Vimeo, or supported embed link
+          </div>
+          {{ form.video_url.errors }}
+        </div>
+
+        <!-- Description -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Description (optional)</label>
+          {{ form.description }}
+        </div>
+
+        <!-- Buttons -->
+        <div class="d-flex justify-content-between">
+          <a href="{% url 'courses:lesson_videos_list' lesson.id %}"
+             class="btn btn-outline-secondary">
+            ← Back to video Lesson
+          </a>
+
+          <button class="btn btn-primary px-4">
+            💾 Save Video
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

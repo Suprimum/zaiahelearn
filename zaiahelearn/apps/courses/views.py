@@ -26,7 +26,7 @@ import json
 def save_lesson_progress(request, lesson_id):
     lesson = get_object_or_404(Lesson, id=lesson_id)
 
-    data = json.loads(request.body)
+    data = request.POST
     
     percent = float(data.get("percent", 0))
     scroll_position = int(data.get("scroll", 0))
@@ -78,12 +78,12 @@ def teacher_lessons(request):
 @login_required
 @require_POST
 def reset_lesson_progress(request, lesson_id):
-    data = json.loads(request.body)
+    #data = json.loads(request.body)
 
     LessonProgress.objects.filter(
         user=request.user,
         lesson_id=int(lesson_id)
-    ).update(percent=0, scroll_position=0)
+    ).update(progress_percent=0, last_scroll_position=0)
 
     return JsonResponse({"status": "reset"})
 

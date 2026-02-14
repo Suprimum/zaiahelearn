@@ -3,6 +3,25 @@
 
 
 
+{% block navbar %}
+<nav class="navbar navbar-dark bg-dark sticky-top course-navbar shadow-sm" style="margin-top: -7.1vh;">
+  <div class="container-fluid">
+
+    <button class="btn btn-outline-light d-lg-none me-2"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#lessonSidebar">☰</button>
+
+    <span class="navbar-brand fw-bold">Zaiah E-Learn</span>
+
+    <div class="ms-auto">
+        <a class="btn btn-sm btn-outline-light" href="{% url 'courses:dashboard' %}">Dashboard</a>
+        <a class="btn btn-sm btn-outline-light" href="{% url 'courses:enroll_courses' %}">Courses</a>
+        <a class="btn btn-sm btn-danger" href="{% url 'account_logout' %}">Logout</a>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="container my-5">
 

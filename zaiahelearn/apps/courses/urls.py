@@ -7,8 +7,8 @@ app_name = "courses"
 
 urlpatterns = [
     path("dashboard/", views.dashboard, name="dashboard"),
-    path("course/<slug:slug>/<int:id>/", views.course_detail, name="course_detail"),
-    path("course/<slug:slug>/<int:id>/lesson/<int:lesson_id>/", views.lesson_detail, name="lesson_detail"),
+    path("course/<slug:slug>/<int:course_id>/lesson/<int:lesson_id>/", views.lesson_detail, name="lesson_detail"),
+    path("course/<slug:slug>/<int:course_id>/lesson/", views.lesson_detail, name="first_lesson_detail"),
     path("courses/explore/", views.course_list, name="course_list"),
     path("enroll/", views.enroll_courses_page, name="enroll_courses"),
     path("enroll/<int:course_id>/", views.enroll_course, name="enroll_course"),
@@ -34,5 +34,10 @@ urlpatterns = [
     path("lesson/<int:lesson_id>/progress/reset/", views.reset_lesson_progress, name="reset_lesson_progress"),
     path("course/<slug:slug>/<int:course_id>/lesson/<int:lesson_id>/next/",views.next_lesson,name="next_lesson"),
     path("course/<slug:slug>/<int:course_id>/lesson/<int:lesson_id>/prev/",views.prev_lesson,name="prev_lesson"),
+    path("teacher/video/lesson/<int:lesson_id>/list/",views.lesson_videos_list,name="lesson_videos_list"),
+    path("teacher/lesson/<int:lesson_id>/video/create/",views.lesson_video_create_edit,name="lesson_video_create"),
+    path("teacher/lesson/<int:lesson_id>/video/<int:video_id>/edit/",views.lesson_video_create_edit,name="lesson_video_edit"),
+    path("teacher/lesson/<int:lesson_id>/video/<int:video_id>/delete/",views.lesson_video_delete,name="lesson_video_delete"),
+    path("lesson/<int:lesson_id>/ai-quiz/", views.ai_lesson_quiz, name="ai_lesson_quiz"),
 
 ]

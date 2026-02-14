@@ -26,7 +26,7 @@ def lesson_quiz_page(request, lesson_id):
     attempts = LessonQuizAttempt.objects.filter(
         user=request.user,
         quiz__lesson=lesson
-    ).order_by("-completed_at")
+    ).order_by("completed_at")
 
 
     # Map quiz_id -> latest attempt

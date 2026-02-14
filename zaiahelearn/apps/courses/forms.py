@@ -1,8 +1,34 @@
 from django import forms
-from .models import Lesson, TeacherApplication, ContactMessage, Quiz, Question, Teacher
+from .models import Lesson, TeacherApplication, ContactMessage, Quiz, Question, Teacher, Video
 from allauth.account.forms import SignupForm
 
 
+
+
+
+
+class VideoForm(forms.ModelForm):
+    class Meta:
+        model = Video
+        exclude = ('lesson','created_at','updated_at')
+        widgets = {
+            'title': forms.TextInput(attrs={
+                "class": 'form-control',
+                "placeholder": "video title",
+            }),
+
+            'video_url': forms.TextInput(attrs={
+                "class": 'form-control',
+                "placeholder": "video url"
+            }),
+
+            'description':forms.Textarea(attrs={
+                "rows": 5,
+                'class': "form-control ",
+                "placeholder": "video description",
+                "required": False,
+            }),
+        }
 
 
 

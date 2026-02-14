@@ -74,7 +74,7 @@
         </div>
 
         <div class="card-footer bg-white border-0">
-          <a href="{% if user.is_authenticated %}{% url 'courses:course_detail' course.slug course.id %}{% else %}{% url 'account_login' %}{% endif %}"
+          <a href="{% if user.is_authenticated %}{% url 'courses:first_lesson_detail' course.slug course.id %}{% else %}{% url 'account_login' %}{% endif %}"
              class="btn btn-outline-primary w-100">
             View Course
           </a>
