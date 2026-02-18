@@ -89,7 +89,7 @@ def lesson_detail(request, slug, course_id, lesson_id=None):
         "course": course,
         "cur_lesson": lesson,
         "lessons": lessons,
-        "lesson_content": lesson.content_html or render_lesson_content(lesson) or "Content coming soon...",
+        "lesson_content": render_lesson_content(lesson) or "Content coming soon...",
         "enrolled_courses": enroll_courses,
         "lesson_progress": lesson_progress,
         "saved_percent": lesson_progress.progress_percent if lesson_progress else 0,

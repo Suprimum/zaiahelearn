@@ -38,6 +38,165 @@
 }
 
 </style>
+
+<style>
+/* -------------------- HEADINGS -------------------- */
+h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #0d6efd; /* Bootstrap primary */
+    margin-bottom: 0.5rem;
+}
+
+h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #343a40;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+h4 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #495057;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+/* -------------------- KEY POINTS / DEFINITIONS -------------------- */
+.key-point, .definition {
+    background-color: #e9f7ef;
+    border-left: 5px solid #28a745;
+    padding: 1rem 1.2rem;
+    margin: 1rem 0;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #155724;
+}
+
+.definition {
+    background-color: #fff3cd;
+    border-left-color: #ffc107;
+    color: #856404;
+}
+
+/* -------------------- EXAMPLES -------------------- */
+.example-box {
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+}
+
+.example-header {
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+    border-radius: 8px 8px 0 0;
+    color: #fff;
+}
+
+/* Difficulty level colors */
+.example-easy {
+    background-color: #198754; /* green */
+}
+
+.example-normal {
+    background-color: #0d6efd; /* blue */
+}
+
+.example-hard {
+    background-color: #fd7e14; /* orange */
+}
+
+.example-very-hard {
+    background-color: #dc3545; /* red */
+}
+
+.example-body {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 0 0 8px 8px;
+    font-size: 1rem;
+}
+
+/* -------------------- HINTS -------------------- */
+.hint {
+    background-color: #e2e3ff;
+    border-left: 5px solid #6f42c1;
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-style: italic;
+    color: #383d7c;
+}
+
+/* -------------------- ALERTS -------------------- */
+.alert-primary {
+    background-color: #cff4fc;
+    border-left: 5px solid #0dcaf0;
+    padding: 0.8rem 1rem;
+    border-radius: 6px;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-left: 5px solid #ffc107;
+    padding: 0.8rem 1rem;
+    border-radius: 6px;
+}
+
+.alert-secondary {
+    background-color: #e2e3e5;
+    border-left: 5px solid #6c757d;
+    padding: 0.8rem 1rem;
+    border-radius: 6px;
+}
+
+/* -------------------- MATH STEPS -------------------- */
+.math-step {
+    font-weight: 500;
+    font-style: italic;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* -------------------- TABLES -------------------- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.95rem;
+}
+
+table th, table td {
+    border: 1px solid #dee2e6;
+    padding: 0.5rem;
+    text-align: center;
+}
+
+table thead {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+/* -------------------- GRAPHS -------------------- */
+.graph-box {
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+/* -------------------- RESPONSIVE -------------------- */
+@media (max-width: 768px) {
+    h1 { font-size: 1.8rem; }
+    h3 { font-size: 1.3rem; }
+    h4 { font-size: 1.1rem; }
+    .example-body { font-size: 0.95rem; }
+    .key-point, .definition, .hint { font-size: 0.9rem; }
+}
+</style>
+
 {% endblock %}
 
 {% block hero-section %}
@@ -145,13 +304,11 @@ Reset Progress
 
 <hr>
 <div class="card mt-3">
-    <div class="card-header alert alert-info"><h1 class="small">Other Enrolled Courses</h1></div>
-    <div class="card-body p-2 text-center">
+    <div class="card-body p-2">
+        <h1 class="small fw-bold text-dark">Enrolled Courses</h1>
         <div class="list-group">
         {% for e in enrolled_courses %}
-            {% if e.course != course %}
-                <a class="small list-group-item list-group-item-action {% if not e.course.lessons.count %} disabled bg-light {% else %} save-before-nav bg-success {% endif %}" href="{{e.course.get_absolute_url}}">{{e.course.title}}</a>
-            {% endif %}
+            <a class="small mb-2 list-group-item list-group-item-action {% if not e.course.lessons.count %} disabled bg-light {% else %} save-before-nav {% endif %} {% if e.course == course %} active {% endif %}" href="{{e.course.get_absolute_url}}">{{e.course.title}}</a>
         {% endfor %}
         </div>
     </div>

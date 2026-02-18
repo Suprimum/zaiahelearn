@@ -45,8 +45,8 @@
             ➕ New Lesson
         </a>
          <!-- PDF VIEW BUTTON -->
-          <a href="{% url 'courses:pdf_create' %}" class="btn btn-outline-danger btn-sm">
-              📄 Add PDF Resource
+          <a href="{% url 'courses:pdf_list' %}" class="btn btn-primary shadow-sm">
+              📄 PDF Resource
           </a>
 
     </div>
@@ -140,11 +140,6 @@
                                 <a href="{% url 'courses:lesson_quiz_list' lesson.id %}"
                                    class="btn btn-outline-success">
                                    Quizzes
-                                </a>
-
-                                <a href="{% url 'courses:pdf_list' %}"
-                                   class="btn btn-outline-success">
-                                   PDFs
                                 </a>
 
                                
