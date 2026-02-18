@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load dict_extra %}
 
 
 
@@ -33,8 +33,20 @@
 </nav>
 {% endblock %}
 
+
 {% block content %}
-{% load dict_extra %}
+
+<div class="container">
+    {% for message in messages %}
+    <!-- Use message.tags for the dynamic Bootstrap class -->
+    <div class="alert {{ message.tags }} alert-dismissible shadow fade show" role="alert">
+      <div>{{ message|safe }}</div>
+      <!-- For Bootstrap 5, use 'btn-close' and 'data-bs-dismiss' -->
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+
 
 
 <h3 class="fw-bold mb-4 text-secondary">Welcome, {{ request.user.username |title}}</h3>

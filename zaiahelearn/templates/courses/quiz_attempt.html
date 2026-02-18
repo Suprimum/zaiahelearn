@@ -1,18 +1,19 @@
 {% extends "base.html" %}
 {% load static %}
 
-
+{% block hero-section %}
+<section class="hero-section text-white text-center">
+    <div class="container">
+        <h1 class="display-5 fw-bold">🧠 {{ quiz.title }}</h1>
+        <p class="lead">Answer all questions before time runs out</p>
+    </div>
+</section>
+{% endblock %}
 
 {% block navbar %}
-<nav class="navbar navbar-dark bg-dark sticky-top course-navbar shadow-sm" style="margin-top: -7.1vh;">
+<nav class="navbar navbar-dark bg-dark sticky-top shadow-sm" style="margin-top:-7.1vh;">
   <div class="container-fluid">
-
-    <button class="btn btn-outline-light d-lg-none me-2"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#lessonSidebar">☰</button>
-
     <span class="navbar-brand fw-bold">Zaiah E-Learn</span>
-
     <div class="ms-auto">
         <a class="btn btn-sm btn-outline-light" href="{% url 'courses:dashboard' %}">Dashboard</a>
         <a class="btn btn-sm btn-outline-light" href="{% url 'courses:enroll_courses' %}">Courses</a>
@@ -23,143 +24,200 @@
 {% endblock %}
 
 {% block content %}
-<div class="container my-5">
+<div class="container my-4">
 
-  <!-- QUIZ HEADER -->
+  <!-- HEADER -->
   <div class="card shadow-sm mb-4">
-    <div class="card-body d-flex justify-content-between align-items-center flex-wrap">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
 
-      <div>
-        <h3 class="fw-bold mb-1">{{ quiz.title }}</h3>
-        <small class="text-muted">
-          Pass Mark: {{ quiz.pass_score }}%
-        </small>
-      </div>
+        <div>
+            <h4 class="fw-bold mb-1">{{ quiz.title }}</h4>
+            <small class="text-muted">Pass mark: {{ quiz.pass_score }}%</small>
+        </div>
 
-      <!-- TIMER -->
-      <div class="alert alert-warning mb-0 px-4 py-2">
-        ⏱ Time Left:
-        <span id="timer" class="fw-bold"></span>
-      </div>
+        <div class="badge bg-warning text-dark fs-6 px-3 py-2">
+            ⏱ <span id="timer"></span>
+        </div>
 
     </div>
   </div>
-
 
   <!-- QUIZ FORM -->
   <form method="post" id="quizForm">
     {% csrf_token %}
 
     {% for q in questions %}
-    <div class="card mb-4 shadow-sm">
-      <div class="card-body">
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
 
-        <h5 class="fw-bold mb-3">
-          Question {{ forloop.counter }}
-        </h5>
+            <h6 class="fw-bold mb-3">Question {{ forloop.counter }}</h6>
 
-        <!-- Question Content -->
-        <div class="mb-3">
-          {{ q.content_html|safe }}
+            <div class="mb-3 math-content">
+                {{ q.content_html|safe }}
+            </div>
+
+            {% for c in q.choices.all %}
+            <div class="form-check mb-2">
+                <input class="form-check-input"
+                       type="radio"
+                       name="{{ q.id }}"
+                       value="{{ c.choice }}"
+                       id="q{{ q.id }}{{ c.choice }}">
+                <label class="form-check-label" for="q{{ q.id }}{{ c.choice }}">
+                    <strong>{{ c.choice }}.</strong> {{ c.answer }}
+                </label>
+            </div>
+            {% endfor %}
+
         </div>
-
-        <!-- Choices -->
-        {% for c in q.choices.all %}
-        <div class="form-check mb-2">
-          <input class="form-check-input"
-                 type="radio"
-                 name="{{ q.id }}"
-                 value="{{ c.choice }}"
-                 id="q{{ q.id }}_{{ c.choice }}">
-
-          <label class="form-check-label"
-                 for="q{{ q.id }}_{{ c.choice }}">
-            <strong>{{ c.choice }}.</strong>
-            {{ c.answer }}
-          </label>
-        </div>
-        {% endfor %}
-
-      </div>
     </div>
     {% endfor %}
 
-    <!-- SUBMIT -->
-    <div class="card shadow-sm">
-      <div class="card-body text-center">
-        <button type="submit"
-                class="btn btn-primary btn-lg w-100">
-          Submit Quiz
-        </button>
-      </div>
-    </div>
-
+    <button class="btn btn-primary btn-lg w-100 shadow">
+        Submit Quiz
+    </button>
   </form>
-
 </div>
 
-{%endblock%}
+
+<!-- ================= START MODAL ================= -->
+<div class="modal fade" id="startModal" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Quiz Instructions</h5>
+      </div>
+
+      <div class="modal-body small">
+        <ul>
+          <li>Quiz is timed and auto-submits when time expires.</li>
+          <li>Leaving tab or window ends quiz immediately.</li>
+          <li>Fullscreen mode is required.</li>
+          <li>Copy/paste and right-click are disabled.</li>
+        </ul>
+        <p class="text-muted mb-0">Click Start when ready.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="startQuizBtn">Start Quiz</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ================= SECURITY MODAL ================= -->
+<div class="modal fade" id="securityModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center">
+
+      <div class="modal-body py-4">
+        <h5 class="fw-bold mb-3">Quiz Ended</h5>
+        <p id="securityMessage"></p>
+        <button class="btn btn-danger w-100" onclick="quizForm.submit()">Submit Now</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
 
 {% block extra_js %}
-<!-- ========================= -->
-<!-- TIMER SCRIPT -->
-<!-- ========================= -->
 
-<script>
-  const timeLimitMinutes = parseInt(`{{ quiz.time_limit|default:10 }}`);
-  let totalSeconds = timeLimitMinutes * 60;
-
-  const timerElement = document.getElementById("timer");
-  const quizForm = document.getElementById("quizForm");
-
-  function updateTimer() {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-
-    timerElement.textContent =
-      `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-
-    if (totalSeconds <= 0) {
-      clearInterval(timerInterval);
-      alert("Time is up! Submitting quiz...");
-      quizForm.submit();
-    }
-
-    totalSeconds--;
-  }
-
-  updateTimer();
-  const timerInterval = setInterval(updateTimer, 1000);
-</script>
-
-
-<!-- ========================= -->
-<!-- CONFIRM BEFORE SUBMIT -->
-<!-- ========================= -->
-<script>
-  document.getElementById("quizForm")
-    .addEventListener("submit", function(e) {
-
-      const confirmSubmit = confirm(
-        "Are you sure you want to submit your quiz?"
-      );
-
-      if (!confirmSubmit) {
-        e.preventDefault();
-      }
-  });
-</script>
-
-
-<!-- ========================= -->
-<!-- MATHJAX SUPPORT -->
-<!-- ========================= -->
-<script>
-window.MathJax = {
-  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
-  svg: { fontCache: 'global' }
-};
-</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<script>
+const quizForm = document.getElementById("quizForm");
+const securityModal = new bootstrap.Modal(document.getElementById("securityModal"));
+const startModal = new bootstrap.Modal(document.getElementById("startModal"));
+
+let quizStarted = false;
+
+/* ---------- START MODAL ---------- */
+window.onload = () => startModal.show();
+
+document.getElementById("startQuizBtn").onclick = () => {
+    quizStarted = true;
+    startModal.hide();
+    enterFullscreen();
+    startTimer();
+};
+
+/* ---------- TIMER ---------- */
+let totalSeconds = parseInt(`{{ quiz.time_limit|default:10 }}`) * 60;
+const timerElement = document.getElementById("timer");
+
+function startTimer(){
+    updateTimer();
+    setInterval(updateTimer,1000);
+}
+
+function updateTimer(){
+    let m = Math.floor(totalSeconds/60);
+    let s = totalSeconds%60;
+    timerElement.textContent = `${m}:${s<10?'0':''}${s}`;
+    if(totalSeconds<=0){ endQuiz("Time expired"); }
+    totalSeconds--;
+}
+
+/* ---------- FULLSCREEN ---------- */
+function enterFullscreen(){
+    if(document.documentElement.requestFullscreen){
+        document.documentElement.requestFullscreen();
+    }
+}
+
+document.addEventListener("fullscreenchange", ()=>{
+    if(quizStarted && !document.fullscreenElement){
+        endQuiz("Fullscreen exited");
+    }
+});
+
+/* ---------- SECURITY TRIGGERS ---------- */
+document.addEventListener("visibilitychange", ()=>{
+    if(quizStarted && document.hidden){
+        endQuiz("Tab switched");
+    }
+});
+
+window.addEventListener("blur", ()=>{
+    if(quizStarted){
+        endQuiz("Window lost focus");
+    }
+});
+
+/* ---------- DISABLE COPY ---------- */
+document.addEventListener("copy",e=>e.preventDefault());
+document.addEventListener("paste",e=>e.preventDefault());
+document.addEventListener("cut",e=>e.preventDefault());
+document.addEventListener("contextmenu",e=>e.preventDefault());
+
+/* ---------- END QUIZ ---------- */
+function endQuiz(reason){
+    document.getElementById("securityMessage").innerText = reason;
+    securityModal.show();
+}
+
+/* ---------- CONFIRM SUBMIT ---------- */
+quizForm.addEventListener("submit", e=>{
+    if(!confirm("Submit quiz now?")){
+        e.preventDefault();
+    }
+});
+</script>
+
+
+<style>
+.math-content mjx-container,
+.math-content .MathJax {
+    overflow: visible !important;
+    max-width:100% !important;
+}
+body { overflow-x:hidden; }
+</style>
 
 {% endblock %}

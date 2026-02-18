@@ -1,10 +1,10 @@
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Course, Lesson, LessonProgress, Enrollment, Video
+from .models import Course, Lesson, LessonProgress, Enrollment, Video, PDFResource
 from django.utils import timezone
-from .forms import LessonForm, VideoForm
-from .utils import render_lesson_content, teacher_required
+from .forms import LessonForm, VideoForm, PDFResourceForm
+from .utils import render_lesson_content, teacher_required, student_required
 from django.contrib import messages
 from django.db.models import Q
 
@@ -27,6 +27,7 @@ def enroll_courses_page(request):
 
 
 @login_required
+@student_required
 def enroll_course(request, course_id):
 
     course = Course.objects.get(id=course_id)
@@ -39,7 +40,8 @@ def enroll_course(request, course_id):
 
 
 
-
+@login_required
+@student_required
 def complete_lesson(request, lesson_id):
 
     progress, _ = LessonProgress.objects.get_or_create(
@@ -53,9 +55,15 @@ def complete_lesson(request, lesson_id):
 
 
 
-
+@login_required
+@student_required
 def lesson_detail(request, slug, course_id, lesson_id=None):
     course = get_object_or_404(Course, slug=slug,id=course_id)
+
+    try:
+        has_paid = True if request.user.ai_quiz_payment.status == 'paid' else False
+    except Exception as e:
+        has_paid = False
 
     if lesson_id == None:
         lesson = Lesson.objects.filter(course=course).first()
@@ -87,6 +95,7 @@ def lesson_detail(request, slug, course_id, lesson_id=None):
         "saved_percent": lesson_progress.progress_percent if lesson_progress else 0,
         "saved_scroll": lesson_progress.last_scroll_position if lesson_progress else 0,
         "videos": videos,
+        'has_paid':has_paid,
     })
 
 
@@ -256,3 +265,91 @@ def ai_lesson_quiz(request, lesson_id):
 
     # later you plug AI generator here
     return render(request,"courses/ai_quiz_loading.html",{"lesson":lesson})
+
+
+@login_required
+@teacher_required
+def pdf_manage(request, lesson_id, pdf_id=None):
+
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+
+    pdf = None
+    if pdf_id:
+        pdf = get_object_or_404(PDFResource, id=pdf_id, lesson=lesson)
+
+    if request.method == "POST":
+        form = PDFResourceForm(request.POST, request.FILES, instance=pdf)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.lesson = lesson
+            obj.save()
+            return redirect("courses:lesson_detail",
+                            lesson.course.slug,
+                            lesson.course.id,
+                            lesson.id)
+    else:
+        form = PDFResourceForm(instance=pdf)
+
+    return render(request, "teacher/lesson_pdf_form.html", {
+        "form": form,
+        "lesson": lesson,
+        "pdf": pdf
+    })
+
+
+@login_required
+@teacher_required
+def pdf_create_edit(request, pdf_id=None):
+    pdf = None
+
+    if pdf_id:
+        pdf = get_object_or_404(PDFResource, id=pdf_id,)
+
+    # DELETE
+    if request.method == "POST" and "delete" in request.POST:
+        if pdf:
+            pdf.delete()
+        return redirect(
+            "courses:pdf_list",
+        )
+
+    # CREATE / UPDATE
+    if request.method == "POST":
+        form = PDFResourceForm(request.POST, request.FILES, instance=pdf)
+        if form.is_valid():
+            pdf_resource = form.save(commit=False)
+            pdf_resource.author = request.user
+            pdf_resource.save()
+
+            return redirect(
+                "courses:pdf_list",
+            )
+    else:
+        form = PDFResourceForm(instance=pdf)
+
+    return render(request, "teacher/pdf_form.html", {
+        "form": form,
+        "pdf": pdf,
+        "is_edit": pdf is not None
+    })
+
+
+
+
+def pdf_list(request):
+    pdfs = PDFResource.objects.all().order_by("-uploaded_at")
+
+    context = {
+        "pdfs": pdfs,
+        "total": pdfs.count(),
+    }
+    return render(request, "teacher/pdf_list.html", context)
+
+
+
+def pdf_preview(request, pk):
+    pdf = get_object_or_404(PDFResource, pk=pk)
+
+    return render(request, "teacher/pdf_preview.html", {
+        "pdf": pdf
+    })

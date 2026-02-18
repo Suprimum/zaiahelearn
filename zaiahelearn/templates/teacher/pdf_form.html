@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block hero-section %}
+<section class="hero-section text-white text-center">
+  <div class="container">
+    <h1 class="display-5 fw-bold">
+      {% if is_edit %}✏️ Edit PDF Resource{% else %}📄 Add PDF Resource{% endif %}
+    </h1>
+    <p class="lead mt-2">{{ lesson.title }}</p>
+  </div>
+</section>
+{% endblock %}
+
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm" style="margin-top:-7.1vh;">
+    <div class="container-fluid">
+
+        <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+            Zaiah E-Learn
+        </a>
+
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto text-center">
+
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'courses:teacher_dashboard' %}">
+                        Dashboard
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'courses:pdf_list' %}">
+                        PDFs
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="{% url 'account_logout' %}">
+                        Logout
+                    </a>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+
+{% block content %}
+<div class="container py-5" style="max-width:800px;">
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+
+      <h4 class="fw-bold mb-3">
+        {% if is_edit %}Update PDF{% else %}Upload or Embed PDF{% endif %}
+      </h4>
+
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Course: </label>
+           {{ form.course }}
+        </div>
+        <!-- TITLE -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">PDF Title</label>
+          {{ form.title }}
+        </div>
+
+        <!-- FILE UPLOAD -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Upload PDF File</label>
+          {{ form.file }}
+          <small class="text-muted">Optional if using external link</small>
+        </div>
+
+        <!-- EXTERNAL LINK -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold">External PDF URL</label>
+          {{ form.external_url }}
+          <small class="text-muted">
+            Supports Google Drive, Dropbox, or direct PDF link
+          </small>
+        </div>
+
+        <!-- PREVIEW EXISTING PDF -->
+        {% if pdf %}
+        <div class="mb-4">
+
+          <h6 class="fw-bold">Current PDF Preview</h6>
+
+          <div class="ratio ratio-16x9 border rounded">
+            {% if pdf.file %}
+              <iframe src="{{ pdf.file.url }}" style="border:none;"></iframe>
+            {% elif pdf.external_url %}
+              <iframe src="{{ pdf.external_url }}" style="border:none;"></iframe>
+            {% endif %}
+          </div>
+
+        </div>
+        {% endif %}
+
+        <!-- ACTION BUTTONS -->
+        <div class="d-flex gap-2 flex-wrap">
+
+          <button type="submit" class="btn btn-primary px-4">
+            💾 Save PDF
+          </button>
+
+          <a href="{% url 'courses:teacher_dashboard' %}"
+             class="btn btn-outline-secondary">
+             Cancel
+          </a>
+
+          {% if is_edit %}
+          <!-- DELETE BUTTON -->
+          <button type="button"
+                  class="btn btn-outline-danger ms-auto"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deleteModal">
+            🗑 Delete
+          </button>
+          {% endif %}
+
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>
+
+
+{% if is_edit %}
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Delete PDF?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <p class="mb-0">
+          This action cannot be undone.  
+          Are you sure you want to remove this PDF from the lesson?
+        </p>
+      </div>
+
+      <div class="modal-footer">
+
+        <button class="btn btn-outline-secondary"
+                data-bs-dismiss="modal">
+          Cancel
+        </button>
+
+        <form method="post">
+          {% csrf_token %}
+          <button name="delete"
+                  type="submit"
+                  class="btn btn-danger">
+            Delete PDF
+          </button>
+        </form>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

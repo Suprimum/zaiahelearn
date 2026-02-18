@@ -1,9 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Lesson, Quiz, Question, LessonQuizAttempt, QuestionBank, Choice
+from .models import Lesson, Quiz, Question, LessonQuizAttempt, QuestionBank, Choice, AIQuizPayment
 from django.utils import timezone
 from .forms import QuizForm
-from .utils import teacher_required, save_question
+from .utils import teacher_required, save_question, student_required
 from django.contrib import messages
 from django.db.models import Avg, Count, Q
 from django.core.exceptions import PermissionDenied
@@ -12,7 +12,27 @@ from django.core.paginator import Paginator
 from collections import Counter
 
 
+
+
 @login_required
+def ai_quiz_payment(request, lesson_id):
+
+    lesson = get_object_or_404(Lesson,id=lesson_id)
+
+    payment = AIQuizPayment.objects.create(
+        user=request.user,
+        lesson=lesson,
+        amount=2.00,   # your price
+    )
+
+    return render(request,"courses/student/ai_quiz_payment.html",{
+        "lesson":lesson,
+        "payment":payment
+    })
+
+
+@login_required
+@student_required
 def lesson_quiz_page(request, lesson_id):
     lesson = get_object_or_404(Lesson, id=lesson_id)
 
@@ -53,6 +73,9 @@ def question_partial(request, pk):
         "question": question
     })
 
+
+
+
 @login_required
 @teacher_required
 def question_empty_partial(request):
@@ -60,7 +83,10 @@ def question_empty_partial(request):
 
 
 
+
+
 @login_required
+@teacher_required
 def quiz_attempts(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
 
@@ -109,7 +135,7 @@ def quiz_attempts(request, quiz_id):
             if not question:
                 continue
             correct = question.choices.filter(is_correct=True).first()
-            if correct and chosen != correct.label:
+            if correct and chosen != correct.choice:
                 difficulty_counter[str(question)] += 1
 
     hardest_questions = difficulty_counter.most_common(5)
@@ -309,6 +335,7 @@ def quiz_delete(request, quiz_id):
 
 
 @login_required
+@student_required
 def quiz_attempt(request, quiz_id):
     quiz = get_object_or_404(
         Quiz,
@@ -355,6 +382,7 @@ def quiz_attempt(request, quiz_id):
         attempt.answers = answers
         attempt.score = score
         attempt.completed_at = timezone.now()
+        attempt.user_attempts += 1
 
         # Calculate percentage safely
         if attempt.total > 0:

@@ -169,13 +169,14 @@ section {
                 <h6 class="dropdown-header text-primary">
                     <i class="fas fa-star"></i> Advanced Level (A-Level)
                 </h6>
-                <a class="dropdown-item" href="#">Mathematics</a>
-                <a class="dropdown-item" href="#">Further Mathematics</a>
-                <a class="dropdown-item" href="#">Physics</a>
-                <a class="dropdown-item" href="#">Chemistry</a>
-                <a class="dropdown-item" href="#">Biology</a>
-                <a class="dropdown-item" href="#">Economics</a>
-                <a class="dropdown-item" href="#">Geography</a>
+                {% for c in al_courses %}
+
+                <a class="dropdown-item" href="{% url 'courses:first_lesson_detail' c.slug c.id %}">{{c.title}}</a>
+
+                {% empty %}
+                <p>No courses available yet</p>
+            
+                {% endfor %}
             </div>
 
             <!-- O-Level -->
@@ -183,12 +184,14 @@ section {
                 <h6 class="dropdown-header text-success">
                     <i class="fas fa-book"></i> Ordinary Level (O-Level)
                 </h6>
-                <a class="dropdown-item" href="#">Mathematics</a>
-                <a class="dropdown-item" href="#">English Language</a>
-                <a class="dropdown-item" href="#">Science</a>
-                <a class="dropdown-item" href="#">Economics</a>
-                <a class="dropdown-item" href="#">Geography</a>
-                <a class="dropdown-item" href="#">History</a>
+                {% for c in ol_courses %}
+
+                <a class="dropdown-item" href="{% url 'courses:first_lesson_detail' c.slug c.id %}">{{c.title}}</a>
+
+                {% empty %}
+                <p>No courses available yet</p>
+            
+                {% endfor %}
             </div>
 
             <!-- Extras / CTA -->
@@ -199,7 +202,7 @@ section {
                         Structured lessons, worked examples,
                         quizzes, and exam-focused practice.
                     </p>
-                    <a href="#" class="btn btn-primary btn-sm w-100">
+                    <a href="{% url 'courses:course_list' %}" class="btn btn-primary btn-sm w-100">
                         Browse All Courses
                     </a>
                 </div>
@@ -333,13 +336,11 @@ section {
             <div class="p-4 border rounded h-100">
                 <h5><i class="fas fa-star text-warning"></i> Advanced Level (A-Level)</h5>
                 <ul class="mb-0">
-                    <li>Mathematics</li>
-                    <li>Further Mathematics</li>
-                    <li>Physics</li>
-                    <li>Chemistry</li>
-                    <li>Biology</li>
-                    <li>Economics</li>
-                    <li>Geography</li>
+                    {% for c in al_courses %}
+                        <li>{{c.title}}</li>
+                    {% empty %}
+                        <p>No courses available yet</p>
+                    {% endfor %}
                 </ul>
             </div>
         </div>
@@ -348,12 +349,11 @@ section {
             <div class="p-4 border rounded h-100">
                 <h5><i class="fas fa-book text-info"></i> Ordinary Level (O-Level)</h5>
                 <ul class="mb-0">
-                    <li>Mathematics</li>
-                    <li>English Language</li>
-                    <li>Science</li>
-                    <li>Economics</li>
-                    <li>Geography</li>
-                    <li>History</li>
+                    {% for c in ol_courses %}
+                        <li>{{c.title}}</li>
+                    {% empty %}
+                        <p>No courses available yet</p>
+                    {% endfor %}
                 </ul>
             </div>
         </div>

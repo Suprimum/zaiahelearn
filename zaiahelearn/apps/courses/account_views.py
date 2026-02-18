@@ -86,7 +86,7 @@ class RoleLoginView(LoginView):
 @login_required
 def teacher_application_entry(request):
     # Already a teacher
-    if hasattr(request.user, 'teacher') and request.user.teacher_application.status == 'approved':
+    if request.user.userprofile.role == 'teacher'and request.user.teacher_application.status == 'approved':
         messages.info(request, "You are already an approved teacher.")
         return redirect('courses:teacher_dashboard')
 

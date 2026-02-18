@@ -88,11 +88,13 @@
             <div>⏱ {{ quiz.time_limit }} mins</div>
             <div>🎯 Pass: {{ quiz.pass_score }}%</div>
             <div>📚 {{ quiz.question_count }} Questions</div>
+            
           </div>
 
           <!-- Attempt Status -->
           {% with attempt=attempt_map|get_item:quiz.id %}
           {% if attempt %}
+                <div class="small text-muted mb-3">{{attempt.user_attempts}}/{{quiz.attempts}} Attempt{{quiz.attempts|pluralize}}</div>
               {% if attempt.passed %}
                   <span class="badge bg-success mb-3">
                       ✅ Passed ({{ attempt.score }}/{{ attempt.total }})
@@ -106,16 +108,31 @@
               <span class="badge bg-secondary mb-3">
                   Not Attempted
               </span>
-          {% endif %}
-          {% endwith %}
 
-          <!-- Button -->
+                 <!-- Button -->
           <div class="mt-auto">
             <a href="{% url 'courses:quiz_attempt' quiz.id %}"
                class="btn btn-primary w-100">
                🚀 Start Quiz
             </a>
           </div>
+          {% endif %}
+
+          {% if attempt and attempt.user_attempts < quiz.attempts %}
+              <!-- Button -->
+          <div class="mt-auto">
+            <a href="{% url 'courses:quiz_attempt' quiz.id %}"
+               class="btn btn-primary w-100">
+               🚀 Start Quiz
+            </a>
+          </div>
+
+          {% elif attempt and attempt.user_attempts >= quiz.attempts %}
+                <div class="text-danger alert alert-danger p-2">Your are out of attempts for this quiz </div>
+            {% endif %}
+          {% endwith %}
+
+          
 
         </div>
 

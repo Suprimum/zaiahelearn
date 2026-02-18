@@ -35,6 +35,18 @@
 
 {% block account_content %}
 
+<div class="container">
+    {% for message in messages %}
+    <!-- Use message.tags for the dynamic Bootstrap class -->
+    <div class="alert {{ message.tags }} alert-dismissible shadow fade show" role="alert">
+      <div>{{ message|safe }}</div>
+      <!-- For Bootstrap 5, use 'btn-close' and 'data-bs-dismiss' -->
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+
+
 <h4 class="fw-bold text-center mb-4">
   Student / Teacher Login
 </h4>

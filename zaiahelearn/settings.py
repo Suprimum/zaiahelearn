@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from decouple import config
+from django.contrib import messages
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,6 +31,15 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['*']#config('ALLOWED_HOSTS', default='', cast=lambda v: [s.strip() for s in v.split(',')])
 
+
+# SUITABLE FOR BOOSTRAP CLASSES
+MESSAGE_TAGS = {
+    messages.DEBUG: 'alert-info',
+    messages.INFO: 'alert-info',
+    messages.SUCCESS: 'alert-success',
+    messages.WARNING: 'alert-warning',
+    messages.ERROR: 'alert-danger',
+}
 
 # Application definition
 
@@ -86,6 +97,7 @@ WSGI_APPLICATION = 'zaiahelearn.wsgi.application'
 
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
+FLUTTERWAVE_SECRET = config("FLUTTERWAVE_SECRET")
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
@@ -132,6 +144,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -152,3 +169,12 @@ LOGIN_REDIRECT_URL = 'courses:dashboard'
 ACCOUNT_LOGOUT_ON_GET = True #skips confirm logout page
 LOGOUT_REDIRECT = 'home'
 ACCOUNT_FORMS = {'signup': 'zaiahelearn.apps.courses.forms.StudentSignupForm'}
+
+# SMTP EMAILING BACKEND
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'sandbox.smtp.mailtrap.io' # Replace with your email host (e.g., smtp.sendgrid.net)
+EMAIL_PORT = 587 # Use 587 for TLS or 465 for SSL
+EMAIL_USE_TLS = True 
+EMAIL_HOST_USER = config("MAILTRAP_USERNAME") # Use environment variables for security
+EMAIL_HOST_PASSWORD = config("MAILTRAP_PASSWORD") # Use environment variables for security
+DEFAULT_FROM_EMAIL = 'from@example.com' # Default sender address

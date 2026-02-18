@@ -119,8 +119,8 @@
     <ul class="list-group">
       {% for q, misses in hardest_questions %}
         <li class="list-group-item d-flex justify-content-between">
-          <span>{{ q|truncatechars:80 }}</span>
-          <span class="badge bg-danger">{{ misses }} wrong</span>
+          <span>{{ q|truncatechars:80|safe }}</span>
+          <span class="badge bg-danger">{{ misses|safe }} wrong</span>
         </li>
       {% empty %}
         <li class="list-group-item text-muted">No difficulty data yet</li>

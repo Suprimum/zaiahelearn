@@ -19,12 +19,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
 from zaiahelearn.apps.courses import views
+from django.conf.urls.static import static
+from django.conf import settings
 
 from zaiahelearn.apps.courses.views import RoleLoginView, StudentSignupView, account_delete
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', TemplateView.as_view(template_name='base.html'), name='home'),
+    path('', views.homepage, name='home'),
     path('courses/', include('zaiahelearn.apps.courses.urls', namespace='courses')),
     path('accounts/signup/', StudentSignupView.as_view(), name='account_signup'),
     path('accounts/login/', RoleLoginView.as_view(), name='account_login'),
@@ -32,3 +34,6 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path("contact/", views.contact_us, name="contact"),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

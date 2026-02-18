@@ -1,10 +1,30 @@
 from django import forms
-from .models import Lesson, TeacherApplication, ContactMessage, Quiz, Question, Teacher, Video
+from .models import Lesson, TeacherApplication, ContactMessage, Quiz, Question, Teacher, Video, PDFResource
 from allauth.account.forms import SignupForm
 
 
 
 
+
+class PDFResourceForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Apply bootstrap classes to all default fields
+        for field in self.fields.values():
+            field.widget.attrs.setdefault("class", "form-control")
+
+    class Meta:
+        model = PDFResource
+        fields = ["course","title", "file", "external_url"]
+
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "form-control"}),
+            "external_url": forms.URLInput(attrs={
+                "class": "form-control",
+                "placeholder": "Paste external PDF link"
+            })
+        }
 
 
 class VideoForm(forms.ModelForm):

@@ -38,6 +38,13 @@ urlpatterns = [
     path("teacher/lesson/<int:lesson_id>/video/create/",views.lesson_video_create_edit,name="lesson_video_create"),
     path("teacher/lesson/<int:lesson_id>/video/<int:video_id>/edit/",views.lesson_video_create_edit,name="lesson_video_edit"),
     path("teacher/lesson/<int:lesson_id>/video/<int:video_id>/delete/",views.lesson_video_delete,name="lesson_video_delete"),
-    path("lesson/<int:lesson_id>/ai-quiz/", views.ai_lesson_quiz, name="ai_lesson_quiz"),
+    path("lesson/<int:lesson_id>/ai-quiz-generate/", views.view_ai_quiz, name="generate_ai_quiz"),
+    path("lesson/<int:lesson_id>/ai-quiz/payment/", views.ai_quiz_payment, name="ai_quiz_payment"),
+    path("flutterwave/payment/<uuid:reference>/", views.start_flutterwave_payment, name="start_flutterwave_payment"),
+    path("flutterwave/payment/verify/",views.payment_verify,name="payment_verify"),
+    path("teacher/lesson/pdf/add/", views.pdf_create_edit, name="pdf_create"),
+    path("teacher/pdf/<int:pdf_id>/edit/", views.pdf_create_edit, name="pdf_edit"),
+    path("teacher/lesson/pdfs/", views.pdf_list, name="pdf_list"),
+    path("teacher/pdf/<int:pk>/preview/", views.pdf_preview, name="pdf_preview"),
 
-]
+]   

@@ -3,7 +3,7 @@ from .models import (
     Course, Lesson, TeacherApplication, 
     Teacher, UserProfile, Quiz, Question, 
     Choice, QuestionBank, LessonQuizAttempt,
-    Video
+    Video, PDFResource
     )
 
 
@@ -78,3 +78,9 @@ class VideoAdmin(admin.ModelAdmin):
 
     def video_url(self,model):
         return model.title
+    
+
+
+@admin.register(PDFResource)
+class PDFResourceAdmin(admin.ModelAdmin):
+    list_display = ['course','title','file','external_url']
