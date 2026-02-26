@@ -20,6 +20,7 @@
         </button>
       </li>
 
+      <!--
       <li class="nav-item">
         <button type="button"
                 class="nav-link"
@@ -28,6 +29,7 @@
           Markdown
         </button>
       </li>
+    -->
 
       <li class="nav-item">
         <button type="button"
@@ -49,6 +51,7 @@
           name="question_content_html[]">
 {{ question.content_html|default:'' }}
         </textarea>
+        <small class="text-muted">Supports Latex. Place Latex content inside \\( \\)</small>
       </div>
 
       <!-- MARKDOWN -->
@@ -62,6 +65,7 @@
 {{ question.content_markdown|default:'' }}
         </textarea>
       </div>
+    
 
       <!-- PREVIEW -->
       <div class="tab-pane fade"

@@ -1,9 +1,21 @@
 from django import forms
-from .models import Lesson, TeacherApplication, ContactMessage, Quiz, Question, Teacher, Video, PDFResource
+from .models import Lesson, TeacherApplication, ContactMessage, Quiz, Question, Teacher, Video, PDFResource, Classroom
 from allauth.account.forms import SignupForm
 
 
 
+
+
+
+class ClassroomForm(forms.ModelForm):
+    class Meta:
+        model = Classroom
+        fields = ['title', 'course', 'description', 'is_active']
+        widgets = {
+            'title': forms.TextInput(attrs={'class':'form-control'}),
+            'description': forms.Textarea(attrs={'class':'form-control', 'rows':3}),
+            'is_active': forms.CheckboxInput(attrs={'class':'form-check-input'})
+        }
 
 
 class PDFResourceForm(forms.ModelForm):
@@ -16,7 +28,7 @@ class PDFResourceForm(forms.ModelForm):
 
     class Meta:
         model = PDFResource
-        fields = ["course","title", "file", "external_url"]
+        fields = ["course","title", "file", "external_url","price"]
 
         widgets = {
             "title": forms.TextInput(attrs={"class": "form-control"}),
@@ -30,7 +42,7 @@ class PDFResourceForm(forms.ModelForm):
 class VideoForm(forms.ModelForm):
     class Meta:
         model = Video
-        exclude = ('lesson','created_at','updated_at')
+        exclude = ('lesson','created_at','updated_at',"is_paid")
         widgets = {
             'title': forms.TextInput(attrs={
                 "class": 'form-control',
@@ -48,6 +60,10 @@ class VideoForm(forms.ModelForm):
                 "placeholder": "video description",
                 "required": False,
             }),
+            "price":forms.NumberInput(attrs={
+                "class": "form-control",
+                "placeholder":"Purchase price"
+            })
         }
 
 
@@ -182,7 +198,7 @@ class LessonForm(forms.ModelForm):
 
         widgets = {
             'content_html': forms.Textarea(attrs={
-                'class': 'rich-editor form-control',
+                'class': 'rich-editor form-control d-none',
                 'placeholder': 'Write lesson in HTML...',
                 'required': False,
             }),

@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Lesson, Quiz, Question, LessonQuizAttempt, QuestionBank, Choice, AIQuizPayment
+from .models import Lesson, Quiz, Question, LessonQuizAttempt, QuestionBank, Choice, AIQuiz
 from django.utils import timezone
 from .forms import QuizForm
 from .utils import teacher_required, save_question, student_required
@@ -14,21 +14,6 @@ from collections import Counter
 
 
 
-@login_required
-def ai_quiz_payment(request, lesson_id):
-
-    lesson = get_object_or_404(Lesson,id=lesson_id)
-
-    payment = AIQuizPayment.objects.create(
-        user=request.user,
-        lesson=lesson,
-        amount=2.00,   # your price
-    )
-
-    return render(request,"courses/student/ai_quiz_payment.html",{
-        "lesson":lesson,
-        "payment":payment
-    })
 
 
 @login_required
@@ -252,7 +237,9 @@ def quiz_create_edit(request, lesson_id, quiz_id=None):
     lesson = get_object_or_404(Lesson, id=lesson_id)
     quiz = None
     form = None
-    
+    #instantiate a new ai quiz object
+    ai_quiz = AIQuiz.objects.create(lesson=lesson,user=request.user)
+
     if quiz_id: #edit quiz
         quiz = get_object_or_404(Quiz, id=quiz_id, lesson=lesson)
 
@@ -312,6 +299,7 @@ def quiz_create_edit(request, lesson_id, quiz_id=None):
     return render(request, "courses/quiz_form.html", {
         "lesson": lesson,
         "quiz": quiz,
+        "ai_quiz":ai_quiz,
         "form": form,
         "questions": questions,
     })

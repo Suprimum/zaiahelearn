@@ -1,18 +1,26 @@
 from django.shortcuts import redirect
 from django.contrib import messages
 import markdown
-from .models import Choice, Question, QuestionBank, AIQuizPayment, Quiz, AIQuiz
+from .models import Choice, Question, QuestionBank, Quiz, AIQuiz, Purchase
 
 from zaiahelearn.ai.main import ai_generate_questions
+from django.contrib.contenttypes.models import ContentType
 
 
 
-def has_paid_for_ai_quiz(user, lesson):
-    return AIQuizPayment.objects.filter(
-        user=user,
-        lesson=lesson,
-        status="paid"
+def user_has_access(user, obj):
+    if not obj.is_paid:
+        return True
+
+    ct = ContentType.objects.get_for_model(obj)
+
+    return Purchase.objects.filter(
+        student=user,
+        content_type=ct,
+        object_id=obj.id,
+        paid=True
     ).exists()
+
 
 
 def generate_quiz_with_ai(payment, user):
@@ -48,6 +56,8 @@ def generate_quiz_with_ai(payment, user):
     )
 
     return quiz
+
+   
 
 
 

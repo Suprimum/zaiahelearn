@@ -263,9 +263,15 @@
                       🤖 Generate AI Quiz
               </a>
             {% else %}
-              <a href="{% url 'courses:ai_quiz_payment' lesson.id %}" class="btn btn-warning w-100 mb-2 mt-2">
-                🔒 Unlock AI Quiz
-              </a>
+
+
+            <button class="btn btn-warning w-100 mb-2 mt-2 shadow-sm pay-btn"
+                data-id="{{ ai_quiz.id }}"
+                data-type="quiz"
+                data-url="/courses/pay/quiz/{{ ai_quiz.id }}/">
+              🔒  Generate AI Quiz — {{ ai_quiz.price }} XAF
+            </button>
+
             {% endif %}            
 
 
@@ -279,6 +285,50 @@
     </div>
   </form>
 </div>
+
+
+<!-- PAYMENT MODAL -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title">Generate AI Quiz</h5>
+        <button type="button" class="btn-close btn-close-white"
+                data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <p class="small text-muted mb-2">
+          Enter your Mobile Money number to generate quiz by AI.
+        </p>
+
+        <input type="text"
+               id="paymentPhone"
+               class="form-control"
+               placeholder="e.g. 6XXXXXXXX">
+
+        <input type="hidden" id="paymentPdfId">
+        <input type="hidden" id="paymentId">
+        <input type="hidden" id="paymentType">
+        <input type="hidden" id="paymentUrl">
+
+        <div id="paymentStatus" class="small mt-2"></div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-warning" id="confirmPaymentBtn">
+          Pay & Generate
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 
@@ -387,5 +437,95 @@ document.addEventListener("DOMContentLoaded", function() {
   initializeEditors();
 });
 </script>
+
+
+{# Payment script #}
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    const modal = new bootstrap.Modal(document.getElementById("paymentModal"))
+    const phoneInput = document.getElementById("paymentPhone")
+    const docInput = document.getElementById("paymentId")
+    const typeInput = document.getElementById("paymentType")
+    const urlInput = document.getElementById("paymentUrl")
+
+    const statusBox = document.getElementById("paymentStatus")
+    const confirmBtn = document.getElementById("confirmPaymentBtn")
+
+    /* ---------------- OPEN MODAL ---------------- */
+    document.querySelectorAll(".pay-btn").forEach(btn=>{
+        btn.addEventListener("click", function(){
+
+            docInput.value = this.dataset.id
+            typeInput.value = this.dataset.type
+            urlInput.value = this.dataset.url
+
+            phoneInput.value = ""
+            statusBox.innerHTML = ""
+            confirmBtn.disabled = false
+            confirmBtn.innerHTML = "Pay & Generate"
+
+            modal.show()
+        })
+    })
+
+    /* ---------------- CONFIRM PAYMENT ---------------- */
+    confirmBtn.addEventListener("click", async function(){
+
+        const phone = phoneInput.value.trim()
+        const docId = docInput.value
+        const paymentUrl = urlInput.value
+
+        if(!phone){
+            statusBox.innerHTML =
+                "<span class='text-danger'>Enter a valid phone number</span>"
+            return
+        }
+
+        confirmBtn.disabled = true
+        confirmBtn.innerHTML = "Processing..."
+
+        try{
+
+            const res = await fetch(paymentUrl,{
+                method:"POST",
+                headers:{
+                    "X-CSRFToken":"{{csrf_token}}"
+                },
+                body:new URLSearchParams({
+                    phone: phone,
+                    object_id: docId
+                })
+            })
+
+            const data = await res.json()
+
+            if(data.error || data.error_code){
+                statusBox.innerHTML =
+                    `<span class='text-danger'>${data.message || "Payment failed"}</span>`
+                confirmBtn.disabled = false
+                confirmBtn.innerHTML = "Pay & Generate"
+                return
+            }
+
+            statusBox.innerHTML =
+                "<span class='text-success'>Payment request sent to your phone. Confirm to unlock.</span>"
+
+            /* Wait a few seconds then refresh */
+            setTimeout(()=>{
+                location.reload()
+            },6000)
+
+        }catch(err){
+            statusBox.innerHTML =
+                "<span class='text-danger'>Network error. Try again.</span>"
+            confirmBtn.disabled = false
+            confirmBtn.innerHTML = "Pay & Unlock"
+        }
+    })
+
+})
+</script>
+
 
 {% endblock %}

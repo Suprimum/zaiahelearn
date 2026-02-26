@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+
+{% block extra_css %}
+<style>
+
+:root{
+    --teacher:#fff8e1;
+    --student:#ffffff;
+    --border:#e5e7eb;
+    --primary:#2563eb;
+}
+
+/* PAGE */
+.chat-box{
+    height:50vh;
+    overflow-y:auto;
+    background:#f8fafc;
+    padding:14px;
+}
+
+/* MESSAGE BUBBLES */
+.msg{
+    max-width:70%;
+    padding:10px 14px;
+    border-radius:14px;
+    margin-bottom:12px;
+    box-shadow:0 1px 2px rgba(0,0,0,.05);
+    font-size:.95rem;
+}
+
+.msg-teacher{
+    background:var(--teacher);
+    border-left:4px solid #facc15;
+}
+
+.msg-student{
+    background:var(--student);
+    margin-left:auto;
+    border-right:4px solid #cbd5e1;
+}
+
+.msg small{
+    display:block;
+    font-size:.75rem;
+    opacity:.6;
+    margin-top:4px;
+}
+
+/* VIDEO GRID */
+.video-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:12px;
+}
+
+.video-card{
+    background:#000;
+    border-radius:10px;
+    overflow:hidden;
+    position:relative;
+}
+
+.video-card small{
+    position:absolute;
+    bottom:6px;
+    left:8px;
+    color:white;
+    font-size:.75rem;
+    background:rgba(0,0,0,.4);
+    padding:2px 6px;
+    border-radius:4px;
+}
+
+.video-card video{
+    width:100%;
+    height:140px;
+    object-fit:cover;
+}
+
+/* PARTICIPANTS */
+
+.participant{
+    padding:14px 18px;
+    border-bottom:1px solid #e5e7eb;
+    font-size:.95rem;
+    background:white;
+}
+
+.participant:nth-child(odd){
+    background:#f8fafc;
+}
+
+/* MOBILE INPUT BAR */
+.chat-input-bar{
+    position:sticky;
+    bottom:0;
+    background:white;
+    padding:10px;
+    border-top:1px solid var(--border);
+}
+
+/* HEADER */
+.classroom-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:12px;
+}
+
+/* LIVE BANNER */
+.live-banner{
+    border-radius:8px;
+    font-weight:500;
+    font-size:.9rem;
+}
+
+#typingIndicator{
+    width: fit-content;
+    margin-left: 50%;
+}
+</style>
+{% endblock %}
+
+
+
+
+
+{% block hero-section %}
+<section class="hero-section text-white text-center">
+    <div class="container">
+        <h1 class="display-5 fw-bold">🧑‍🏫📋 {{classroom.title|title }} Classroom </h1>
+        <p class="lead">For Course group work and group participation </p>
+    </div>
+</section>
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-dark bg-dark sticky-top shadow-sm" style="margin-top:-7.1vh;">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-bold">Zaiah E-Learn</span>
+    <div class="ms-auto">
+        {% if request.user != classroom.teacher %}
+            <a class="btn btn-sm btn-outline-light" href="{% url 'courses:dashboard' %}">Dashboard</a>
+            <a class="btn btn-sm btn-outline-light" href="{% url 'courses:enroll_courses' %}">Courses</a>
+        {% else %}
+            <a class="btn btn-sm btn-outline-light" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a>
+        {% endif %}
+        <a class="btn btn-sm btn-danger" href="{% url 'account_logout' %}">Logout</a>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+
+
+{% block content %}
+<div class="container-fluid py-3">
+
+  <div class="mb-4 d-flex justify-content-between">
+    <a class="btn btn-outline-secondary shadow-sm" 
+      href="{% if request.user == classroom.teacher %}{% url 'courses:teacher_dashboard' %}{% else %}{% url 'courses:dashboard' %}{% endif %}">
+       ← Back to dashboard
+    </a>
+  </div>
+
+<div class="classroom-header">
+    <h5 class="fw-semibold mb-0">{{ classroom.title }}</h5>
+    <button class="btn btn-outline-primary d-lg-none mb-2"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#participantsDrawer">
+        View Participants
+    </button>
+
+</div>
+
+<div id="liveBanner" class="alert alert-success live-banner d-none text-center py-2 mb-3">
+🔴 Live session in progress
+</div>
+
+<div class="row g-3">
+
+<!-- LEFT COLUMN -->
+<div class="col-lg-8">
+
+<!-- CHAT -->
+<div class="card shadow-sm">
+<div class="card-header bg-white fw-semibold">
+    Class Chat
+    <small id="typingIndicator" class="text-muted"></small>
+</div>
+
+<div id="chatBox" class="chat-box"></div>
+
+<div class="chat-input-bar">
+<div class="input-group">
+<input id="chatInput" class="form-control" placeholder="Type message…">
+<button id="sendBtn" class="btn btn-primary">Send</button>
+</div>
+</div>
+
+</div>
+
+<!-- VIDEO -->
+<div class="card shadow-sm mt-3">
+<div class="card-header bg-white fw-semibold d-flex justify-content-between">
+
+<span>Live Video</span>
+
+<div class="btn-group btn-group-sm">
+
+{% if request.user == classroom.teacher %}
+<button id="startBtn" class="btn btn-danger">Start</button>
+<button id="endBtn" class="btn btn-outline-danger">Stop</button>
+{% endif %}
+
+<button id="joinBtn" class="btn btn-success" disabled>Join</button>
+
+</div>
+</div>
+
+<div id="videoGrid" class="video-grid p-3"></div>
+</div>
+
+</div>
+
+<!-- PARTICIPANTS DESKTOP -->
+<div class="col-lg-4 d-none d-lg-block">
+<div class="card shadow-sm">
+<div class="card-header bg-white fw-semibold">Participants</div>
+<div id="participantsList"></div>
+</div>
+</div>
+
+</div>
+
+<!-- MOBILE PARTICIPANTS -->
+
+<!-- PARTICIPANTS OFFCANVAS (BOTTOM) -->
+<div class="offcanvas offcanvas-bottom h-50" tabindex="-1" id="participantsDrawer">
+  <div class="offcanvas-header border-bottom">
+    <h6 class="offcanvas-title fw-semibold">Participants</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+
+  <div class="offcanvas-body p-0">
+    <div id="participantsMobile"></div>
+  </div>
+</div>
+
+</div>
+{% endblock %}
+
+
+
+{% block extra_js %}
+<script>
+const classroomId="{{ classroom.id }}";
+const username="{{ request.user.username }}";
+const isTeacher=`{% if request.user == classroom.teacher %} true {% else %} false {% endif%}`;
+const teacher = `{{ classroom.teacher.username }}`
+
+const ws=new WebSocket(
+ (location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws/classroom/"+classroomId+"/"
+);
+
+const chatBox=document.getElementById("chatBox");
+const typingEl=document.getElementById("typingIndicator");
+const participantsList=document.getElementById("participantsList");
+const participantsMobile=document.getElementById("participantsMobile");
+const videoGrid=document.getElementById("videoGrid");
+
+const liveBanner=document.getElementById("liveBanner");
+const chatInput=document.getElementById("chatInput");
+const sendBtn=document.getElementById("sendBtn");
+const joinBtn=document.getElementById("joinBtn");
+const startBtn=document.getElementById("startBtn");
+const endBtn=document.getElementById("endBtn");
+
+let participants={};
+let peers={};
+let localStream=null;
+let liveActive=false;
+
+/* -------- CHAT -------- */
+
+function addMessage(msg){
+ const div=document.createElement("div");
+ div.className="msg "+(msg.is_teacher?"msg-teacher":"msg-student");
+ div.innerHTML=`<b>${msg.username}</b><br>${msg.message}<small>${msg.created}</small>`;
+ chatBox.appendChild(div);
+ chatBox.scrollTop=chatBox.scrollHeight;
+}
+
+sendBtn.onclick=()=>{
+ const v=chatInput.value.trim();
+ if(!v) return;
+ ws.send(JSON.stringify({type:"chat",message:v}));
+ chatInput.value="";
+};
+
+chatInput.oninput=()=>ws.send(JSON.stringify({type:"typing"}));
+
+/* -------- PARTICIPANTS -------- */
+var you = ''
+function renderParticipants(){
+ participantsList.innerHTML="";
+ participantsMobile.innerHTML="";
+
+ Object.values(participants).forEach(p=>{
+    if(username == p.username) you = ' (you)'
+    else you = ''
+
+   const row=`<div class="participant">
+        ${p.username===teacher ? "🧑‍🏫" : "👨‍🎓"} ${p.username} ${you}
+   </div>`;
+   participantsList.innerHTML+=row;
+   participantsMobile.innerHTML+=row;
+ });
+}
+
+/* -------- VIDEO -------- */
+
+function addVideo(name,stream,muted=false){
+ const wrap=document.createElement("div");
+ wrap.className="video-card";
+ wrap.innerHTML=`<small>${name}</small><video autoplay playsinline ${muted?"muted":""}></video>`;
+ wrap.querySelector("video").srcObject=stream;
+ videoGrid.appendChild(wrap);
+}
+
+
+joinBtn.onclick = async () => {
+
+ if(!liveActive) {
+   alert("Live session not started by teacher");
+   return;
+ }
+
+ if(localStream){
+   alert("You already joined the session");
+   return;
+ }
+
+ localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+ addVideo(username,localStream,true);
+
+ ws.send(JSON.stringify({type:"join_video"}));
+};
+
+/* teacher controls */
+if(startBtn){
+ startBtn.onclick = ()=>{
+   if(liveActive){
+     alert("Live session already running");
+     return;
+   }
+   ws.send(JSON.stringify({type:"start_live"}));
+ };
+}
+
+
+if(endBtn){
+ endBtn.onclick=()=>{
+   ws.send(JSON.stringify({type:"end_live"}));
+   videoGrid.innerHTML="";
+   peers={};
+   if(localStream){
+     localStream.getTracks().forEach(t=>t.stop());
+   }
+ };
+}
+
+/* -------- WEBRTC -------- */
+
+async function createPeer(peer){
+ const pc=new RTCPeerConnection();
+ peers[peer]=pc;
+
+ localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+ pc.ontrack=e=>addVideo(peer,e.streams[0]);
+
+ pc.onicecandidate=e=>{
+   if(e.candidate){
+     ws.send(JSON.stringify({type:"signal",signal:{candidate:e.candidate,target:peer}}));
+   }
+ };
+
+ const offer=await pc.createOffer();
+ await pc.setLocalDescription(offer);
+
+ ws.send(JSON.stringify({type:"signal",signal:{offer:offer,target:peer}}));
+}
+
+async function handleSignal(sender,msg){
+ if(sender===username) return;
+
+ if(!peers[sender]) await createPeer(sender);
+ const pc=peers[sender];
+
+ if(msg.offer){
+   await pc.setRemoteDescription(new RTCSessionDescription(msg.offer));
+   const ans=await pc.createAnswer();
+   await pc.setLocalDescription(ans);
+   ws.send(JSON.stringify({type:"signal",signal:{answer:ans,target:sender}}));
+ }
+
+ if(msg.answer){
+   await pc.setRemoteDescription(new RTCSessionDescription(msg.answer));
+ }
+
+ if(msg.candidate){
+   try{await pc.addIceCandidate(msg.candidate);}catch{}
+ }
+}
+
+/* -------- SOCKET EVENTS -------- */
+
+ws.onmessage=e=>{
+ const d=JSON.parse(e.data);
+
+ if(d.type==="history") d.messages.forEach(addMessage);
+
+ if(d.type==="chat") addMessage(d.message);
+
+ if(d.type==="participants"){
+   participants={};
+   d.users.forEach(u=>participants[u]={username:u});
+   renderParticipants();
+ }
+
+ if(d.type==="typing"){
+   typingEl.innerText=d.user+" typing...";
+   setTimeout(()=>typingEl.innerText="",1200);
+ }
+
+if(d.type==="live_started"){
+    liveActive = true;
+    joinBtn.disabled = false;
+    liveBanner.classList.remove("d-none");
+    videoGrid.innerHTML="";
+    peers={};
+}
+
+if(d.type==="live_ended"){
+ liveActive=false;
+ joinBtn.disabled=true;
+ liveBanner.classList.add("d-none");
+
+ videoGrid.innerHTML="";
+ peers={};
+
+ if(localStream){
+   localStream.getTracks().forEach(t=>t.stop());
+   localStream=null;
+ }
+}
+
+ if(d.type==="video_ready"){
+   if(localStream) createPeer(d.username);
+ }
+
+ if(d.type==="signal"){
+   handleSignal(d.from,d.signal);
+ }
+};
+</script>
+{% endblock %}

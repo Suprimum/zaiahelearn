@@ -11,44 +11,73 @@
 {% endblock %}
 
 
-
 {% block navbar %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
-        <div class="container-fluid"> 
-            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
-                <span class="navbar-toggler-icon"></span> 
-            </button> 
-            <div class="collapse navbar-collapse" id="navbarNav"> 
-                <ul class="navbar-nav ms-auto"> 
-                    <li class="nav-item"> 
-                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
-                    </li>  
-                    <li class="nav-item"> 
-                        <a class="nav-link text-danger" href="{% url 'account_logout' %}">Logout</a>
-                    </li>
-                </ul>
-            </div> 
-        </div>
-    </nav>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+  <div class="container-fluid">
+
+    <a class="navbar-brand" href="#">ZaiaheLearn</a>
+
+    <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'home' %}">Home</a>
+        </li>
+
+        <!-- NEW: Teacher Dashboard link -->
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'courses:teacher_dashboard' %}">
+            Dashboard
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link text-danger" href="{% url 'account_logout' %}">
+            Logout
+          </a>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</nav>
 {% endblock %}
+
 
 
 {% block content %}
 <div class="container py-5">
 
-  <!-- Header Actions -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <!-- Top Actions -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+
     <h4 class="fw-bold mb-0">Lesson Videos</h4>
 
-    <a href="{% url 'courses:lesson_video_create' lesson.id %}"
-       class="btn btn-primary">
-       ➕ Add Video
-    </a>
+    <div class="d-flex gap-2">
+
+      <!-- NEW: Back to dashboard -->
+      <a href="{% url 'courses:teacher_dashboard' %}"
+         class="btn btn-outline-secondary">
+         ← Back to Dashboard
+      </a>
+
+      <a href="{% url 'courses:lesson_video_create' lesson.id %}"
+         class="btn btn-primary">
+         ➕ Add Video
+      </a>
+
+    </div>
+
   </div>
 
-  {% if videos %}
 
+  {% if videos %}
   <div class="row g-4">
 
     {% for video in videos %}
@@ -71,6 +100,7 @@
           </p>
           {% endif %}
 
+          <!-- Actions -->
           <div class="mt-auto d-flex justify-content-between">
 
             <a href="{% url 'courses:lesson_video_edit' lesson.id video.id %}"
@@ -86,7 +116,6 @@
           </div>
 
         </div>
-
       </div>
 
     </div>

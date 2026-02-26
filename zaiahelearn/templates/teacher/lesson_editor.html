@@ -2,7 +2,85 @@
 
 {% block extra_css %}
 <style>
-  .rich-editor, .markdown-editor {
+  /* ===== LESSON BLOCKS GLOBAL ===== */
+
+.lesson-title{
+  font-size:2rem;
+  font-weight:700;
+  margin:1rem 0;
+  border-bottom:3px solid #0d6efd;
+  padding-bottom:.3rem;
+}
+
+.lesson-subtitle{
+  font-size:1.4rem;
+  font-weight:600;
+  margin:.8rem 0;
+  color:#555;
+}
+
+.lesson-example{
+  border-left:5px solid #198754;
+  background:#f1fff6;
+  padding:1rem;
+  margin:1rem 0;
+}
+
+.lesson-theorem{
+  border-left:5px solid #212529;
+  background:#f8f9fa;
+  padding:1rem;
+  margin:1rem 0;
+}
+
+.lesson-warning{
+  border-left:5px solid #dc3545;
+  background:#fff5f5;
+  padding:1rem;
+  margin:1rem 0;
+}
+
+.lesson-tip{
+  border-left:5px solid #0dcaf0;
+  background:#f0fcff;
+  padding:1rem;
+  margin:1rem 0;
+}
+
+.lesson-keypoint{
+  border-left:5px solid #0d6efd;
+  background:#eef5ff;
+  padding:1rem;
+  margin:1rem 0;
+}
+
+.lesson-toc ul{
+  list-style:none;
+  padding-left:0;
+}
+
+.lesson-toc li{
+  padding:.25rem 0;
+}
+
+.math-block{
+  overflow-x:auto;
+  background:#f8f9fa;
+  padding:1rem;
+  border-radius:.5rem;
+  margin:1rem 0;
+}
+
+table{
+  margin:1rem 0;
+}
+
+img{
+  max-width:100%;
+  height:auto;
+}
+
+ .rich-editor, .markdown-editor {
     min-height: 300px;
     border: 1px solid #ced4da;
     border-radius: 0.375rem;
@@ -15,6 +93,19 @@
     min-height: 300px;
     overflow-y: auto;
   }
+
+#livePreview .card {
+  box-shadow: 0 .25rem .5rem rgba(0,0,0,.05);
+}
+
+#livePreview h2.lesson-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+#livePreview .accordion-button {
+  font-weight: 600;
+}
 
   .ck-editor__editable {
     min-height: 300px;
@@ -63,7 +154,9 @@ mjx-container[display="true"] {
 }
 
 </style>
+
 {% endblock %}
+
 
 {% block hero-section %}
     <section class="hero-section text-white text-center">
@@ -138,6 +231,46 @@ mjx-container[display="true"] {
           {{ form.title }}
         </div>
 
+        
+        <div class="card shadow-sm mb-3">
+  <div class="card-body">
+
+    <h6 class="fw-bold mb-2">Insert Lesson Blocks</h6>
+
+    <div class="d-flex flex-wrap gap-2">
+
+      <button type="button" class="btn btn-outline-primary btn-sm block-btn" data-type="title">Title</button>
+      <button type="button" class="btn btn-outline-primary btn-sm block-btn" data-type="subtitle">Subtitle</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm block-btn" data-type="text">Paragraph</button>
+      <button type="button" class="btn btn-outline-success btn-sm block-btn" data-type="example">Example</button>
+      <button type="button" class="btn btn-outline-warning btn-sm block-btn" data-type="warning">Warning</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm block-btn" data-type="olist">Numbered List</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm block-btn" data-type="ulist">Bullet List</button>
+      <button type="button" class="btn btn-outline-dark btn-sm block-btn" data-type="table">Table</button>
+      <button type="button" class="btn btn-outline-primary btn-sm block-btn" data-type="link">Link</button>
+      <button type="button" class="btn btn-outline-success btn-sm block-btn" data-type="image">Image</button>
+      <button type="button" class="btn btn-outline-info btn-sm block-btn" data-type="tip">Tip</button>
+      <button type="button" class="btn btn-outline-dark btn-sm block-btn" data-type="theorem">Theorem</button>
+      <button type="button" class="btn btn-outline-danger btn-sm block-btn" data-type="latex">LaTeX</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm block-btn" data-type="collapse">Collapsible Section</button>
+
+    </div>
+
+  </div>
+</div>
+
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <h6 class="fw-bold">Lesson Builder</h6>
+    <p class="text-muted small mb-2">
+      Drag blocks to reorder. Use arrows to nest blocks inside sections.
+    </p>
+
+    <div id="blockWorkspace" class="vstack gap-2"></div>
+  </div>
+</div>
+
         <!-- Editor Tabs -->
         <ul class="nav nav-tabs" id="editorTab" role="tablist">
           <li class="nav-item" role="presentation">
@@ -145,11 +278,13 @@ mjx-container[display="true"] {
               Rich Text (HTML)
             </button>
           </li>
+          <!--
           <li class="nav-item" role="presentation">
             <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#mdTab" role="tab">
               Markdown
             </button>
           </li>
+          -->
           <li class="nav-item" role="presentation">
             <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#previewTab" role="tab">
               Live Preview
@@ -157,22 +292,25 @@ mjx-container[display="true"] {
           </li>
         </ul>
 
+        
         <div class="tab-content border rounded-bottom p-3 bg-white">
           <!-- Rich HTML -->
           <div class="tab-pane fade show active" id="htmlTab" role="tabpanel">
+
             {{ form.content_html }}
             <small class="text-muted d-block mt-2">
               Supports MathJax: <code>\( x^2 + y^2 \)</code>
             </small>
           </div>
 
-          <!-- Markdown -->
+          <!-- Markdown 
           <div class="tab-pane fade" id="mdTab" role="tabpanel">
             {{ form.content_markdown }}
             <small class="text-muted d-block mt-2">
               Markdown + LaTeX supported
             </small>
           </div>
+          -->
 
           <!-- Live Preview -->
           <div class="tab-pane fade" id="previewTab">
@@ -181,6 +319,8 @@ mjx-container[display="true"] {
             </div>
           </div>
         </div>
+
+
 
       </div>
 
@@ -244,85 +384,284 @@ mjx-container[display="true"] {
     </div>
   </div>
 </div>
+
+<div class="modal fade" id="blockModal">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Insert Block</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <textarea id="blockInput" class="form-control" rows="6"
+          placeholder="Enter content..."></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" id="insertBlockBtn">Insert</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 {% endif %}
 
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script>
+{# <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> #}
+{# <script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script> #}
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 
 <script>
-let editorInstance = null;
+const blockHelp = {
+  title: "Main lesson heading",
+  subtitle: "Sub-section heading",
+  text: "Paragraph text",
+  example: "Worked example or solved problem",
+  theorem: "Formal rule, theorem, or property",
+  warning: "Common mistake students make",
+  tip: "Helpful shortcut or advice",
+  latex: "Enter LaTeX only, e.g. x^2 + y^2 = z^2",
+  olist: "One item per line",
+  ulist: "One item per line",
+  table: "Enter rows as CSV. Example:\nName,Score\nJohn,12",
+  link: "Enter full URL",
+  image: "Enter image URL",
+  section: "Creates a numbered section that can contain nested blocks"
+};
 
-document.addEventListener("DOMContentLoaded", function () {
+let blocks = [];
+let selectedType = null;
+let dragIndex = null;
 
-  const htmlTabBtn  = document.querySelector('[data-bs-target="#htmlTab"]');
-  const previewTab  = document.querySelector('[data-bs-target="#previewTab"]');
+const workspace = document.getElementById("blockWorkspace");
+const textarea = document.querySelector(".rich-editor");
+const preview = document.getElementById("livePreview");
 
-  const htmlTextarea = document.querySelector(".rich-editor");
-  const mdTextarea   = document.querySelector(".markdown-editor");
-  const previewBox   = document.getElementById("livePreview");
-
-  /* ================= CKEDITOR INIT ================= */
-  htmlTabBtn.addEventListener("shown.bs.tab", function () {
-
-    if (editorInstance || !htmlTextarea) return;
-
-    ClassicEditor.create(htmlTextarea, {
-      toolbar: [
-        'heading',
-        '|',
-        'bold', 'italic', 'link',
-        'bulletedList', 'numberedList',
-        '|',
-        'blockQuote', 'codeBlock',
-        '|',
-        'undo', 'redo'
-      ],
-    })
-    .then(editor => {
-      editorInstance = editor;
-    })
-    .catch(error => {
-      console.error("CKEditor init error:", error);
-    });
-
-  });
-
-  /* ================= LIVE PREVIEW ================= */
-  previewTab.addEventListener("shown.bs.tab", function () {
-
-    let html = "";
-
-    // Priority 1: Markdown
-    if (mdTextarea && mdTextarea.value.trim()) {
-      html = marked.parse(mdTextarea.value);
-    }
-    // Priority 2: CKEditor
-    else if (editorInstance) {
-      html = editorInstance.getData();
-    }
-    // Fallback: raw textarea value
-    else if (htmlTextarea && htmlTextarea.value.trim()) {
-      html = htmlTextarea.value;
-    }
-
-    previewBox.innerHTML = html || `
-      <p class="text-muted text-center">
-        Nothing to preview yet…
-      </p>
-    `;
-
-    // MathJax render AFTER visible
-    if (window.MathJax) {
-      MathJax.typesetPromise([previewBox]);
-    }
-  });
-
+document.querySelectorAll(".block-btn").forEach(btn=>{
+  btn.onclick = ()=>{
+    selectedType = btn.dataset.type;
+    document.getElementById("blockInput").value = "";
+    document.querySelector("#blockModal .modal-title").innerText =
+      "Insert " + selectedType + " block";
+    document.querySelector("#blockModal textarea").placeholder =
+      blockHelp[selectedType] || "";
+    new bootstrap.Modal(blockModal).show();
+  };
 });
+
+document.getElementById("insertBlockBtn").onclick = ()=>{
+  const text = blockInput.value.trim();
+  if(!text) return;
+
+  blocks.push({
+    type:selectedType,
+    text:text,
+    children:[]
+  });
+
+  renderBlocks();
+  bootstrap.Modal.getInstance(blockModal).hide();
+};
+
+function renderBlocks(){
+
+  workspace.innerHTML = "";
+
+  blocks.forEach((b,i)=>{
+    workspace.appendChild(renderBlockCard(b,i,0));
+  });
+
+  updateExport();
+}
+
+function renderBlockCard(block,index,level){
+
+  const card = document.createElement("div");
+  card.className="card shadow-sm";
+  card.draggable=true;
+
+  card.innerHTML = `
+    <div class="card-body py-2">
+      <div class="d-flex justify-content-between align-items-center">
+
+        <div>
+          <span class="badge bg-secondary me-2">${block.type}</span>
+          <small class="text-muted">${blockHelp[block.type] || ""}</small>
+        </div>
+
+        <div class="btn-group btn-group-sm">
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="nestBlock(${index})">→</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="nestBlock(${index})">←</button>
+          <button class="btn btn-outline-danger" onclick="deleteBlock(${index})">✕</button>
+        </div>
+
+      </div>
+      <div class="mt-2">${block.text}</div>
+    </div>
+  `;
+
+  card.ondragstart = ()=> dragIndex=index;
+  card.ondragover = e=> e.preventDefault();
+  card.ondrop = ()=>{
+    const moved = blocks.splice(dragIndex,1)[0];
+    blocks.splice(index,0,moved);
+    renderBlocks();
+  };
+
+  return card;
+}
+
+function deleteBlock(i){
+  blocks.splice(i,1);
+  renderBlocks();
+}
+
+function findParent(arr, target){
+  for(const b of arr){
+    if(b.children.includes(target)) return b;
+    const deep = findParent(b.children,target);
+    if(deep) return deep;
+  }
+  return null;
+}
+
+function nestBlock(i){
+  if(i===0) return;
+
+  const block = blocks[i];
+  const parent = blocks[i-1];
+
+  parent.children.push(block);
+  blocks.splice(i,1);
+  renderBlocks();
+}
+
+function unnestBlock(i){
+  const block = blocks[i];
+  const parent = findParent(blocks, block);
+  if(!parent) return;
+
+  parent.children = parent.children.filter(c=>c!==block);
+  blocks.push(block);
+  renderBlocks();
+}
+
+
+function buildHTML(list, prefix=""){
+  let html="";
+  let toc="";
+
+  list.forEach((b,i)=>{
+
+    const num = prefix ? `${prefix}.${i+1}` : `${i+1}`;
+
+    if(b.type==="title" || b.type==="section"){
+      html += renderHTML(b,num);
+      toc += `<li>${num} ${b.text}</li>`;
+    }else{
+      html += renderHTML(b,"");
+    }
+
+    if(b.children.length){
+      const child = buildHTML(b.children,num);
+      html += child.html;
+      toc += `<ul>${child.toc}</ul>`;
+    }
+  });
+
+  return {html,toc};
+}
+
+function updateExport(){
+
+  const built = buildHTML(blocks);
+
+  const tocHTML = `
+    <div class="lesson-toc card mb-3">
+      <div class="card-header fw-bold">Table of Contents</div>
+      <div class="card-body"><ul>${built.toc}</ul></div>
+    </div>`;
+
+  const finalHTML = tocHTML + built.html;
+
+  textarea.value = finalHTML;
+  preview.innerHTML = finalHTML;
+
+  if(window.MathJax){
+    MathJax.typesetPromise([preview]);
+  }
+}
+
+
+function renderHTML(b,num){
+
+  const label = num ? `<span class="me-2 text-muted">${num}</span>` : "";
+
+  switch(b.type){
+
+    case "title":
+      return `<h2 class="lesson-title">${label}${b.text}</h2>`;
+
+    case "subtitle":
+      return `<h4 class="lesson-subtitle">${label}${b.text}</h4>`;
+
+    case "text":
+      return `<p>${b.text}</p>`;
+
+    case "example":
+      return `
+        <div class="lesson-example">
+          <strong>Example</strong>
+          <div>${b.text}</div>
+        </div>`;
+
+    case "theorem":
+      return `
+        <div class="lesson-theorem">
+          <strong>Theorem</strong>
+          <div>${b.text}</div>
+        </div>`;
+
+    case "warning":
+      return `<div class="lesson-warning"><strong>Warning:</strong> ${b.text}</div>`;
+
+    case "tip":
+      return `<div class="lesson-tip"><strong>Tip:</strong> ${b.text}</div>`;
+
+    case "latex":
+      return `<div class="math-block">\\[${b.text}\\]</div>`;
+
+    case "olist":
+      return `<ol>${b.text.split('\n').map(i=>`<li>${i}</li>`).join('')}</ol>`;
+
+    case "ulist":
+      return `<ul>${b.text.split('\n').map(i=>`<li>${i}</li>`).join('')}</ul>`;
+
+    case "image":
+      return `<img src="${b.text}" class="img-fluid my-3 rounded">`;
+
+    case "link":
+      return `<p><a href="${b.text}" target="_blank">${b.text}</a></p>`;
+
+    case "table":
+      return `<table class="table table-bordered table-sm">
+        ${b.text.split('\n').map(r=>`<tr>${
+          r.split(',').map(c=>`<td>${c}</td>`).join('')
+        }</tr>`).join('')}
+      </table>`;
+
+    default:
+      return `<p>${b.text}</p>`;
+  }
+}
+
 </script>
 
 

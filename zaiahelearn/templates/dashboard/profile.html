@@ -134,6 +134,36 @@
 <a href="{%url 'courses:enroll_courses' %}" class="btn btn-outline-primary">Enroll in a Course</a>
 {% endfor %}
 
+<h4 class="mb-3">Available Classrooms</h4>
+
+<div class="row">
+{% for classroom in classrooms %}
+<div class="col-md-6 col-lg-4 mb-4">
+  <div class="card shadow-sm h-100">
+    <div class="card-body d-flex flex-column">
+      <h5 class="card-title">{{ classroom.title }}</h5>
+      <p class="text-truncate">{{ classroom.description }}</p>
+
+      {% if not classroom.members.all|contains_approved:request.user  %}
+        <span class="badge bg-warning mb-2">Pending Approval</span>
+      {% elif not classroom.members.all|contains:request.user %}
+        <a href="{% url 'courses:join_classroom' classroom.id %}" class="btn btn-success btn-sm mb-2">Request Join</a>
+      {% endif %}
+
+      {% if classroom.live_stream_url and classroom.members.all|contains_approved:request.user %}
+        <a href="{{ classroom.live_stream_url }}" target="_blank" class="btn btn-warning btn-sm mt-auto">Join Live</a>
+      {% endif %}
+      {% if classroom.members.all|contains_approved:request.user %}
+        <a href="{% url 'courses:classroom_chat' classroom.id %}" class="btn btn-primary btn-sm mt-auto">Open Chat</a>
+        {% endif %}
+    </div>
+  </div>
+</div>
+{% empty %}
+<p>No classrooms available.</p>
+{% endfor %}
+</div>
+
 
 <h5 class="fw-bold mb-3">Enroll in a Course</h5>
 
@@ -168,4 +198,19 @@
     </div>
 </div>
 
+{% endblock %}
+
+
+{% block extra_js %}
+
+<script>
+socket.onmessage = function(e){
+    const data = JSON.parse(e.data);
+
+    if(data.type === "live_notification"){
+        showToast(data.message);   // bootstrap toast popup
+    }
+}
+
+</script>
 {% endblock %}

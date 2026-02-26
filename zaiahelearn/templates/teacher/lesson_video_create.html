@@ -44,6 +44,16 @@
           {{ form.video_url.errors }}
         </div>
 
+        <!-- PRICE -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Price</label>
+          {{ form.price }}
+          <div class="form-text">
+            Enter purchase price if it is a paid video (XAF)
+          </div>
+          {{ form.price.errors }}
+        </div>
+
         <!-- Description -->
         <div class="mb-4">
           <label class="form-label fw-semibold">Description (optional)</label>

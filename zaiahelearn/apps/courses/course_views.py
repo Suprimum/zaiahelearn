@@ -1,10 +1,10 @@
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Course, Lesson, LessonProgress, Enrollment, Video, PDFResource
+from .models import Course, Lesson, LessonProgress, Enrollment, Video, PDFResource, Purchase
 from django.utils import timezone
 from .forms import LessonForm, VideoForm, PDFResourceForm
-from .utils import render_lesson_content, teacher_required, student_required
+from .utils import render_lesson_content, teacher_required, student_required, user_has_access
 from django.contrib import messages
 from django.db.models import Q
 
@@ -13,6 +13,7 @@ from django.db.models import Q
 
 
 @login_required
+@student_required
 def enroll_courses_page(request):
     courses = Course.objects.all()
 
@@ -54,38 +55,58 @@ def complete_lesson(request, lesson_id):
     progress.save()
 
 
+# views.py
+from django.contrib.contenttypes.models import ContentType
+from .models import Course, Lesson, Purchase
+from .utils import user_has_access
+
 
 @login_required
 @student_required
 def lesson_detail(request, slug, course_id, lesson_id=None):
-    course = get_object_or_404(Course, slug=slug,id=course_id)
 
-    try:
-        has_paid = True if request.user.ai_quiz_payment.status == 'paid' else False
-    except Exception as e:
-        has_paid = False
+    course = get_object_or_404(Course, slug=slug, id=course_id)
 
-    if lesson_id == None:
+    # ---------- Lesson selection ----------
+    if lesson_id is None:
         lesson = Lesson.objects.filter(course=course).first()
     else:
         lesson = get_object_or_404(Lesson, id=lesson_id, course=course)
-    
-    lessons = Lesson.objects.filter(course=course, status='published').order_by('created_at')
-    videos = lesson.video_lessons.all()
-    enroll_courses = request.user.enrollments.all().select_related('course')
 
-    # Track views
+    lessons = Lesson.objects.filter(
+        course=course,
+        status="published"
+    ).order_by("created_at")
+
+    videos = lesson.video_lessons.all()
+    resources = course.resources.all()
+
+    enroll_courses = request.user.enrollments.select_related("course")
+
+    # ---------- Track lesson views ----------
+    lesson_progress = None
     if lesson.is_published():
         lesson.views += 1
-        lesson.save(update_fields=['views'])
+        lesson.save(update_fields=["views"])
 
         lesson_progress = LessonProgress.objects.filter(
             user=request.user,
             lesson=lesson
         ).first()
 
+    # ---------- Paid access logic ----------
+    unlocked_pdfs = []
+    unlocked_videos = []
 
-    return render(request, "courses/course_detail.html", {
+    for pdf in resources:
+        if user_has_access(request.user, pdf):
+            unlocked_pdfs.append(pdf.id)
+
+    for video in videos:
+        if user_has_access(request.user, video):
+            unlocked_videos.append(video.id)
+
+    context = {
         "course": course,
         "cur_lesson": lesson,
         "lessons": lessons,
@@ -95,11 +116,19 @@ def lesson_detail(request, slug, course_id, lesson_id=None):
         "saved_percent": lesson_progress.progress_percent if lesson_progress else 0,
         "saved_scroll": lesson_progress.last_scroll_position if lesson_progress else 0,
         "videos": videos,
-        'has_paid':has_paid,
-    })
+        "resources": resources,
+
+        # 🔐 unlocked content IDs for template checks
+        "unlocked_pdf_ids": unlocked_pdfs,
+        "unlocked_video_ids": unlocked_videos,
+    }
+
+    return render(request, "courses/course_detail.html", context)
+
 
 
 @login_required
+@student_required
 def next_lesson(request,slug,course_id,lesson_id):
     try:
         next_l = Lesson.objects.get(id=lesson_id+1)
@@ -110,6 +139,7 @@ def next_lesson(request,slug,course_id,lesson_id):
     
 
 @login_required
+@student_required
 def prev_lesson(request,slug,course_id,lesson_id):
     try:
         prev_l = Lesson.objects.get(id=lesson_id-1)
@@ -117,6 +147,8 @@ def prev_lesson(request,slug,course_id,lesson_id):
     except:
         prev_l = Lesson.objects.last()
         return lesson_detail(request,slug,course_id,prev_l.id)
+
+
 
 
 def course_list(request):
@@ -169,6 +201,7 @@ def lesson_editor(request, lesson_id=None):
         'form': form,
         'lesson': lesson
     })
+
 
 @login_required
 @teacher_required
@@ -267,34 +300,6 @@ def ai_lesson_quiz(request, lesson_id):
     return render(request,"courses/ai_quiz_loading.html",{"lesson":lesson})
 
 
-@login_required
-@teacher_required
-def pdf_manage(request, lesson_id, pdf_id=None):
-
-    lesson = get_object_or_404(Lesson, id=lesson_id)
-
-    pdf = None
-    if pdf_id:
-        pdf = get_object_or_404(PDFResource, id=pdf_id, lesson=lesson)
-
-    if request.method == "POST":
-        form = PDFResourceForm(request.POST, request.FILES, instance=pdf)
-        if form.is_valid():
-            obj = form.save(commit=False)
-            obj.lesson = lesson
-            obj.save()
-            return redirect("courses:lesson_detail",
-                            lesson.course.slug,
-                            lesson.course.id,
-                            lesson.id)
-    else:
-        form = PDFResourceForm(instance=pdf)
-
-    return render(request, "teacher/lesson_pdf_form.html", {
-        "form": form,
-        "lesson": lesson,
-        "pdf": pdf
-    })
 
 
 @login_required
@@ -336,6 +341,8 @@ def pdf_create_edit(request, pdf_id=None):
 
 
 
+@login_required
+@teacher_required
 def pdf_list(request):
     pdfs = PDFResource.objects.all().order_by("-uploaded_at")
 
@@ -347,6 +354,8 @@ def pdf_list(request):
 
 
 
+@login_required
+@teacher_required
 def pdf_preview(request, pk):
     pdf = get_object_or_404(PDFResource, pk=pk)
 

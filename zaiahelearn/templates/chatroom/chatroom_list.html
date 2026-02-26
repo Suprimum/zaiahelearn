@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load dict_extra %}
+
+
+{% block hero-section %}
+<section class="hero-section text-white text-center">
+    <div class="container">
+        <h1 class="display-5 fw-bold"> Your Class Rooms </h1>
+        <p class="lead">View and manage all your classrooms </p>
+    </div>
+</section>
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-dark bg-dark sticky-top shadow-sm" style="margin-top:-7.1vh;">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-bold">Zaiah E-Learn</span>
+    <div class="ms-auto">
+        <a class="btn btn-sm btn-outline-light" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a>
+        <a class="btn btn-sm btn-danger" href="{% url 'account_logout' %}">Logout</a>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+ 
+ 
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between">
+    <a class="btn btn-outline-secondary shadow-sm" href="{% url 'courses:teacher_dashboard' %}"> ← Back to dashboard</a>
+    <a class="btn btn-warning shadow-sm" href="{% url 'courses:classroom_create' %}"> ➕ New classroom</a>
+</div>
+ {% for classroom in classrooms %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ classroom.title }}</h5>
+                    <p class="card-text text-truncate">{{ classroom.description }}</p>
+                    {% with classroom.members.all|approved as members and classroom.members.all|pending as pen %}
+                    <p class="card-text text-muted">Members: {{members.count}}</p>
+                    {% if pen.count %}
+                    <a class="badge p-2 my-2 btn btn-primary" href="{% url 'courses:join_classroom_request_list' classroom.id %}"> <b class="bg-danger">{{pen.count}}</b> requests</a>
+                    {% endif %}
+                    {% endwith %}
+                    {% if classroom.live_stream_url %}
+                        <a href="{{ classroom.live_stream_url }}" target="_blank" class="btn btn-warning btn-sm mb-2">
+                            Go Live
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'courses:classroom_chat' classroom.id %}" class="btn btn-primary btn-sm mt-auto">
+                        Open Chat
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+            <p class="text-center">
+                No classrooms yet. <a href="{% url 'courses:classroom_create' %}">Create one</a>.
+            </p>
+    {% endfor %}
+
+{% endblock %}

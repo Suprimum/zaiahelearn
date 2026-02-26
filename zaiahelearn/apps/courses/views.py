@@ -1,8 +1,7 @@
-from django.shortcuts import render, redirect
-from django.urls import reverse
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Course, Lesson, LessonProgress, AIQuiz
-from .forms import  ContactForm
+from .models import Course, Lesson, LessonProgress, AIQuiz, PDFResource, Purchase, Video, Classroom, ClassroomMember, ClassroomFile
+from .forms import  ContactForm, ClassroomForm
 from .utils import  teacher_required, generate_quiz_with_ai
 from django.contrib import messages
 
@@ -14,13 +13,95 @@ from .course_views import *
 
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.core.mail import send_mail
+from django.contrib.contenttypes.models import ContentType
 
 
 
-import requests
+import requests, json
 from django.conf import settings
+
+
+
+
+
+
+@login_required
+def start_payment(request, model_name, object_id):
+
+    MODEL_MAP = {
+        "pdf": PDFResource,
+        "video": Video,
+        "quiz": AIQuiz,
+    }
+
+    model = MODEL_MAP.get(model_name)
+    if not model:
+        return JsonResponse({"error": "Invalid resource"}, status=400)
+
+    obj = get_object_or_404(model, id=object_id)
+
+    if not obj.is_paid:
+        return JsonResponse({"error": "Item is free"}, status=400)
+
+    content_type = ContentType.objects.get_for_model(obj)
+
+    purchase, _ = Purchase.objects.get_or_create(
+        student=request.user,
+        content_type=content_type,
+        object_id=obj.id,
+        defaults={"amount": obj.price}
+    )
+
+    phone = request.POST.get("phone")
+
+    payload = {
+        "amount": str(obj.price),
+        "currency": "XAF",
+        "from": phone,
+        "description": f"Payment for {obj}",
+        "external_reference": str(purchase.id),
+    }
+
+    headers = {
+        "Authorization": f"Token {settings.CAMPAY_API_KEY}"
+    }
+
+    response = requests.post(
+        "https://demo.campay.net/api/collect/",
+        json=payload,
+        headers=headers
+    )
+
+    data = response.json()
+
+    purchase.campay_reference = data.get("reference")
+    purchase.external_reference = str(purchase.id)
+    purchase.save()
+
+    return JsonResponse(data)
+
+
+@csrf_exempt
+def campay_webhook(request):
+
+    data = json.loads(request.body)
+
+    reference = data.get("reference")
+    status = data.get("status")
+    external_reference = data.get("external_reference")
+
+    purchase = Purchase.objects.filter(
+        external_reference=external_reference
+    ).first()
+
+    if purchase and status == "SUCCESSFUL":
+        purchase.paid = True
+        purchase.save()
+
+    return JsonResponse({"status": "ok"})
 
 
 
@@ -37,48 +118,14 @@ def homepage(request):
     return render(request,'base.html',context)
 
 
-@login_required
-def start_flutterwave_payment(request, reference):
 
-    payment = get_object_or_404(AIQuizPayment,reference=reference)
 
-    payload = {
-        "tx_ref": str(payment.reference),
-        "amount": str(payment.amount),
-        "currency": "USD",
-        "redirect_url": request.build_absolute_uri(
-            reverse("courses:payment_verify")
-        ),
-        "customer":{
-            "email":request.user.email,
-            "name":request.user.username
-        }
-    }
-
-    headers = {
-        "Authorization": f"Bearer {settings.FLUTTERWAVE_SECRET}",
-        "Content-Type":"application/json"
-    }
-
-    res = requests.post(
-        "https://api.flutterwave.com/v3/payments",
-        json=payload,
-        headers=headers
-    ).json()
-
-    if res['status'] == 'error':
-        print (res)
-        messages.error(request,res['message'])
-        
-        return redirect('courses:dashboard')
-        
-    return redirect(res["data"]["link"])
 
 @login_required
 def payment_verify(request):
 
     ref = request.GET.get("tx_ref")
-    payment = get_object_or_404(AIQuizPayment,reference=ref)
+    payment = get_object_or_404(Purchase,external_reference=ref)
 
     payment.status = "paid"
     payment.paid_at = timezone.now()
@@ -88,6 +135,8 @@ def payment_verify(request):
     quiz = generate_quiz_with_ai(payment, request.user)
 
     return redirect("courses:view_ai_quiz", quiz.id)
+
+
 
 
 @login_required
@@ -103,6 +152,8 @@ def view_ai_quiz(request, quiz_id):
         return redirect("courses:dashboard")
 
     return render(request,"student/ai_quiz.html",{"quiz":quiz})
+
+
 
 
 @login_required
@@ -136,6 +187,8 @@ def save_lesson_progress(request, lesson_id):
 
 
 
+
+
 def contact_us(request):
     form = ContactForm(request.POST or None)
 
@@ -163,12 +216,104 @@ def contact_us(request):
 
 @login_required
 @teacher_required
-def teacher_lessons(request):
+def teacher_dashboard(request):
     lessons = Lesson.objects.filter(author=request.user).order_by('-updated_at')
+    classrooms = Classroom.objects.filter(teacher=request.user)
     
-    return render(request, 'teacher/lesson_list.html', {
-        'lessons': lessons
-    })
+    context = {
+        'lessons': lessons,
+        'classrooms': classrooms
+    }
+
+    return render(request, 'teacher/teacher_dashboard.html', context)
+
+
+@login_required
+@teacher_required
+def classroom_list(request):
+    teacher = request.user
+    classrooms = teacher.created_classrooms.all()
+
+    context = {
+        "classrooms": classrooms,
+    }
+
+    return render(request,"chatroom/chatroom_list.html",context)
+
+@login_required
+@teacher_required
+def classroom_create(request):
+    if request.method == "POST":
+        form = ClassroomForm(request.POST)
+        if form.is_valid():
+            classroom = form.save(commit=False)
+            classroom.teacher = request.user
+            classroom.save()
+            return redirect('courses:teacher_dashboard')
+    else:
+        form = ClassroomForm()
+
+    return render(request, "teacher/classroom_create.html", {"form": form})
+
+
+
+@login_required
+@teacher_required
+def approve_student(request, classroom_id, member_id):
+    classroom = get_object_or_404(Classroom, id=classroom_id, teacher=request.user)
+    member = get_object_or_404(ClassroomMember, id=member_id, classroom=classroom)
+    member.approved = True
+    member.save()
+
+    return redirect('courses:teacher_dashboard')
+
+
+def classroom_chat(request, classroom_id):
+    class_room = get_object_or_404(Classroom,id=classroom_id)
+
+    if class_room:
+        context = {
+            'classroom':class_room,
+        }
+        return render(request,'chatroom/chatroom.html',context)
+    
+
+@login_required
+@teacher_required
+def start_class(request, classroom_id):
+    room = get_object_or_404(Classroom, id=classroom_id, teacher=request.user)
+    room.is_live = True
+    room.save()
+
+    # Notify students via Channels
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+
+    channel_layer = get_channel_layer()
+
+    async_to_sync(channel_layer.group_send)(
+        f"classroom_{room.id}",
+        {
+            "type": "class_started",
+            "message": f"{room.name} is now live!",
+        }
+    )
+
+    return redirect("classroom_detail", room.id)
+
+
+@login_required
+def upload_class_file(request, room_id):
+    room = get_object_or_404(Classroom, id=room_id)
+
+    if request.method == "POST":
+        ClassroomFile.objects.create(
+            classroom=room,
+            uploaded_by=request.user,
+            file=request.FILES["file"]
+        )
+        return redirect("classroom_detail", room.id)
+
 
 
 @login_required
@@ -186,7 +331,7 @@ def reset_lesson_progress(request, lesson_id):
 
 @login_required
 @student_required
-def dashboard(request):
+def student_dashboard(request):
     courses = Course.objects.all()  # later: filter enrolled
 
     enrolled_courses = Course.objects.filter(
@@ -223,7 +368,14 @@ def dashboard(request):
         for course in enrolled_courses
     }
 
-    return render(request, "dashboard/profile.html", {
+    classrooms = Classroom.objects.filter(is_active=True)#.exclude(members__student=request.user)
+    requests_sent = ClassroomMember.objects.filter(student=request.user)
+    joined_classrooms = ClassroomMember.objects.filter(student=request.user, approved=True)
+
+    context = {
+        "classrooms": classrooms,
+        "requests_sent": requests_sent,
+        "joined_classrooms": joined_classrooms,
         "courses": courses,
         "courses_count": enrolled_courses.count(),
         "lessons_completed": LessonProgress.objects.filter(user=request.user, completed=True).count(),
@@ -233,10 +385,34 @@ def dashboard(request):
         "total_lessons": total_lessons,
         "overall_progress": overall_progress,
         "popular_lessons": popular_lessons,
-    })
+    }
+
+    return render(request, "dashboard/profile.html", context)
 
 
 
+
+@login_required
+@student_required
+def join_classroom(request, classroom_id):
+    classroom = get_object_or_404(Classroom, id=classroom_id)
+    ClassroomMember.objects.get_or_create(student=request.user, classroom=classroom)
+    return redirect('courses:dashboard')
+
+
+
+@login_required
+@teacher_required
+def join_classroom_request_list(request, classroom_id):
+    classroom = get_object_or_404(Classroom, id=classroom_id)
+    pending_requests = classroom.members.filter(approved=False)
+
+    context = {
+        'classroom': classroom,
+        'pending_requests': pending_requests,
+    }
+
+    return render(request,'teacher/classroom_join_request_list.html',context)
 
 
 

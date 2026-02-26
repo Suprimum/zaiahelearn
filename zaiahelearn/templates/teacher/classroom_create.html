@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+
+{% block hero-section %}
+<section class="hero-section text-white text-center">
+    <div class="container">
+        <h1 class="display-5 fw-bold"> Class Room Create </h1>
+        <p class="lead">Create Course class room and enjoy group work with your students </p>
+    </div>
+</section>
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-dark bg-dark sticky-top shadow-sm" style="margin-top:-7.1vh;">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-bold">Zaiah E-Learn</span>
+    <div class="ms-auto">
+        <a class="btn btn-sm btn-outline-light" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a>
+        <a class="btn btn-sm btn-danger" href="{% url 'account_logout' %}">Logout</a>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+
+{% block content %}
+
+<form method="post">
+    {% csrf_token %}
+
+    {{form.as_p}}
+    <input type="submit" value="Create" class="btn btn-primary">
+</form>
+{% endblock %}

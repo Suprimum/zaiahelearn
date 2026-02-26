@@ -353,18 +353,38 @@ Lesson content not available yet.
 <div class="tab-pane fade" id="videoTab">
 {% if videos %}
 <div class="row g-3">
+
 {% for video in videos %}
-<div class="col-md-6">
-<div class="card shadow-sm h-100 border-0">
-<div class="ratio ratio-16x9">
-{% video video.video_url '426x240' %}
+
+<div class="card shadow-sm mb-3 p-2">
+
+    <h6 class="fw-bold">{{ video.title }}</h6>
+
+    {% if video.is_paid %}
+
+        <div class="ratio ratio-16x9 mb-2">
+            {% video video.video_url '426x240' %}
+        </div>
+
+    {% else %}
+
+        <div class="bg-dark text-white text-center p-4 rounded">
+            🔒 Paid Video — {{ video.price }} XAF
+            <br>
+
+            <button class="btn btn-warning btn-sm pay-btn"
+                data-id="{{ video.id }}"
+                data-type="video"
+                data-url="/courses/pay/video/{{ video.id }}/">
+               🔓 Unlock Video
+            </button>
+
+        </div>
+
+    {% endif %}
+
 </div>
-<div class="card-body">
-<h6>{{video.title}}</h6>
-<p class="small text-muted">{{video.description|default:"No description"}}</p>
-</div>
-</div>
-</div>
+
 {% endfor %}
 </div>
 {% else %}
@@ -372,73 +392,114 @@ Lesson content not available yet.
 {% endif %}
 </div>
 
+
 <!-- PDF TAB -->
 <div class="tab-pane fade" id="questionsTab">
+
 {% if course.resources.all %}
 
 <div class="card shadow-sm mt-4">
-  <div class="card-body">
+<div class="card-body">
 
-    <h5 class="fw-bold mb-3">📄 Lesson Resources</h5>
+<h5 class="fw-bold mb-3">📄 {{course}} Resources</h5>
 
-    <div class="row g-4">
+<div class="row g-4">
 
-      {% for pdf in course.resources.all %}
+{% for pdf in resources %}
 
-      <div class="col-lg-6">
+<div class="col-md-6">
 
-        <div class="border rounded p-3">
+<div class="border rounded p-3 h-100 shadow-sm">
 
-          <h6 class="fw-bold">{{ pdf.title }}</h6>
+<!-- TITLE + BADGE -->
+<h6 class="fw-bold d-flex justify-content-between align-items-center">
+    {{ pdf.title }}
 
-          <div class="ratio ratio-16x9 mb-2">
+    {% if pdf.is_paid %}
+        {% if pdf.id not in unlocked_pdf_ids %}
+            <span class="badge bg-warning text-dark">🔒 Paid</span>
+        {% else %}
+            <span class="badge bg-success">Unlocked</span>
+        {% endif %}
+    {% else %}
+        <span class="badge bg-success">Free</span>
+    {% endif %}
+</h6>
 
-            {% if pdf.file %}
-                <iframe src="{{ pdf.file.url }}"
-                      style="border:none;">
-                </iframe>
+<!-- MINI PREVIEW (VISIBLE FOR ALL) -->
+<div class="ratio ratio-16x9 mb-2 border rounded bg-light">
 
-            {% elif pdf.external_url %}
-              <iframe src="{{ pdf.external_url }}"
-                      style="border:none;">
-                </iframe>
-            {% endif %}
+    {% if pdf.file %}
+        <iframe src="{{ pdf.file.url }}#toolbar=0"
+                style="border:none; pointer-events:none; opacity:.85;">
+        </iframe>
 
-          </div>
+    {% elif pdf.external_url %}
+        <iframe src="{{ pdf.external_url }}"
+                style="border:none; pointer-events:none; opacity:.85;">
+        </iframe>
 
-          <div class="d-flex gap-2">
-
-            {% if pdf.file %}
-            <a href="{{ pdf.file.url }}" target="_blank"
-               class="btn btn-outline-danger btn-sm">
-               Open PDF
-            </a>
-            {% endif %}
-
-            {% if pdf.external_url %}
-            <a href="{{ pdf.external_url }}" target="_blank"
-               class="btn btn-outline-danger btn-sm">
-               Open Source
-            </a>
-            {% endif %}
-
-          </div>
-
+    {% else %}
+        <div class="d-flex align-items-center justify-content-center text-muted small">
+            Preview unavailable
         </div>
-      </div>
+    {% endif %}
 
-      {% endfor %}
+</div>
 
-    </div>
+<!-- ACTION BUTTONS -->
+<div class="d-flex gap-2">
 
-  </div>
+{% if pdf.is_paid and pdf.id not in unlocked_pdf_ids %}
+
+    <button class="btn btn-warning btn-sm pay-btn"
+        data-id="{{ pdf.id }}"
+        data-type="pdf"
+        data-url="/courses/pay/pdf/{{ pdf.id }}/">
+    🔓 Unlock ({{ pdf.price }} FCFA)
+</button>
+
+
+{% else %}
+
+    {% if pdf.file %}
+    <a href="{{ pdf.file.url }}" target="_blank"
+       class="btn btn-outline-danger btn-sm">
+       Open PDF
+    </a>
+    {% endif %}
+
+    {% if pdf.external_url %}
+    <a href="{{ pdf.external_url }}" target="_blank"
+       class="btn btn-outline-danger btn-sm">
+       Open Source
+    </a>
+    {% endif %}
+
+{% endif %}
+
+</div>
+
+</div>
+</div>
+
+{% endfor %}
+
+</div>
+</div>
 </div>
 
 {% else %}
-<div class="alert alert-light text-center">No past questions available for {{course.title}}</div>
+
+<div class="alert alert-light text-center">
+No resources available for {{ course.title }}
+</div>
 
 {% endif %}
+
 </div>
+
+
 
 </div>
 </div>
@@ -483,7 +544,55 @@ Lesson content not available yet.
 </div>
 </div>
 
+<!-- PAYMENT MODAL -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title">Unlock PDF Resource</h5>
+        <button type="button" class="btn-close btn-close-white"
+                data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <p class="small text-muted mb-2">
+          Enter your Mobile Money number to unlock this resource.
+        </p>
+
+        <input type="text"
+               id="paymentPhone"
+               class="form-control"
+               placeholder="e.g. 6XXXXXXXX">
+
+        <input type="hidden" id="paymentPdfId">
+        <input type="hidden" id="paymentId">
+        <input type="hidden" id="paymentType">
+        <input type="hidden" id="paymentUrl">
+
+        <div id="paymentStatus" class="small mt-2"></div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-warning" id="confirmPaymentBtn">
+          Pay & Unlock
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 {% endblock %}
+
+
+
+
+
+
 
 {% block extra_js %}
 <script>
@@ -561,7 +670,96 @@ window.scrollTo(0,0)
 
 })
 </script>
+
+
+{# Payment script #}
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    const modal = new bootstrap.Modal(document.getElementById("paymentModal"))
+    const phoneInput = document.getElementById("paymentPhone")
+    const docInput = document.getElementById("paymentId")
+    const typeInput = document.getElementById("paymentType")
+    const urlInput = document.getElementById("paymentUrl")
+
+    const statusBox = document.getElementById("paymentStatus")
+    const confirmBtn = document.getElementById("confirmPaymentBtn")
+
+    /* ---------------- OPEN MODAL ---------------- */
+    document.querySelectorAll(".pay-btn").forEach(btn=>{
+        btn.addEventListener("click", function(){
+
+            docInput.value = this.dataset.id
+            typeInput.value = this.dataset.type
+            urlInput.value = this.dataset.url
+
+            phoneInput.value = ""
+            statusBox.innerHTML = ""
+            confirmBtn.disabled = false
+            confirmBtn.innerHTML = "Pay & Unlock"
+
+            modal.show()
+        })
+    })
+
+    /* ---------------- CONFIRM PAYMENT ---------------- */
+    confirmBtn.addEventListener("click", async function(){
+
+        const phone = phoneInput.value.trim()
+        const docId = docInput.value
+        const paymentUrl = urlInput.value
+
+        if(!phone){
+            statusBox.innerHTML =
+                "<span class='text-danger'>Enter a valid phone number</span>"
+            return
+        }
+
+        confirmBtn.disabled = true
+        confirmBtn.innerHTML = "Processing..."
+
+        try{
+
+            const res = await fetch(paymentUrl,{
+                method:"POST",
+                headers:{
+                    "X-CSRFToken":"{{csrf_token}}"
+                },
+                body:new URLSearchParams({
+                    phone: phone,
+                    object_id: docId
+                })
+            })
+
+            const data = await res.json()
+
+            if(data.error || data.error_code){
+                statusBox.innerHTML =
+                    `<span class='text-danger'>${data.message || "Payment failed"}</span>`
+                confirmBtn.disabled = false
+                confirmBtn.innerHTML = "Pay & Unlock"
+                return
+            }
+
+            statusBox.innerHTML =
+                "<span class='text-success'>Payment request sent to your phone. Confirm to unlock.</span>"
+
+            /* Wait a few seconds then refresh */
+            setTimeout(()=>{
+                location.reload()
+            },6000)
+
+        }catch(err){
+            statusBox.innerHTML =
+                "<span class='text-danger'>Network error. Try again.</span>"
+            confirmBtn.disabled = false
+            confirmBtn.innerHTML = "Pay & Unlock"
+        }
+    })
+
+})
+</script>
+
 {% endblock %}
 
-refactor code, make sure all tags are close properly and layout doesnt break
 

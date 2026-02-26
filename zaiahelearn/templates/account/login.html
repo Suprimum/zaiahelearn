@@ -78,15 +78,23 @@
   <!-- Password -->
   <div class="mb-3">
     <label class="form-label">Password</label>
-    <input
-      type="password"
-      name="password"
-      class="form-control {% if form.password.errors %}is-invalid{% endif %}"
-      placeholder="••••••••"
-    >
-    {% for error in form.password.errors %}
-      <div class="alert alert-danger small">{{ error }}</div>
-    {% endfor %}
+    <div class="input-group">
+        <input type="password"
+            id="passwordField"
+            name="password"
+            class="form-control {% if form.password.errors %}is-invalid{% endif %}"
+             placeholder="••••••••">
+
+        <button type="button"
+            class="btn btn-outline-secondary"
+            id="togglePassword">
+              👁
+        </button>
+
+        {% for error in form.password.errors %}
+        <div class="invalid-feedback d-block">{{ error }}</div>
+          {% endfor %}
+    </div>
   </div>
 
   <button class="btn btn-primary w-100 py-2">
@@ -99,4 +107,25 @@
   </div>
 
 </form>
+{% endblock %}
+
+
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    const toggleBtn = document.getElementById("togglePassword")
+    const passwordField = document.getElementById("passwordField")
+
+    if(toggleBtn){
+        toggleBtn.addEventListener("click", function(){
+            const type = passwordField.getAttribute("type") === "password" ? "text" : "password"
+            passwordField.setAttribute("type", type)
+            this.textContent = type === "password" ? "👁" : "🙈"
+        })
+    }
+
+})
+</script>
 {% endblock %}

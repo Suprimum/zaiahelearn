@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+    <a class="btn btn-outline-secondary mb-2" href="{% url 'courses:teacher_dashboard' %}">back to dashboard</a>
+    {% for pending_member in pending_requests %}
+        <div class=" card w-25">
+            <div class="card-header">Name: {{pending_member.student.username|title}}</div>
+            <div>
+                Lesson progress: <br>
+                Quizzes taken:
+            </div>
+            <div class="card-footer"><a class="btn btn-primary" href="{% url 'courses:approve_student' classroom.id request.user.id %}">Approve </a></div>
+        </div>
+    {% endfor %}
+{% endblock%}

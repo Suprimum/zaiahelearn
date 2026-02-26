@@ -44,6 +44,7 @@ MESSAGE_TAGS = {
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'embed_video',
+    'channels',
     #'allauth.socialaccount',
     'django_extensions',
     #local apps
@@ -94,10 +96,22 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'zaiahelearn.wsgi.application'
+ASGI_APPLICATION = "zaiahelearn.asgi.application"
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer", #"channels_redis.core.RedisChannelLayer",
+        #"CONFIG": {"hosts": [("127.0.0.1", 6379),("localhost", 6379)]},
+    },
+}
+
 
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
-FLUTTERWAVE_SECRET = config("FLUTTERWAVE_SECRET")
+#FLUTTERWAVE_SECRET = config("FLUTTERWAVE_SECRET")
+CAMPAY_API_KEY = config("CAMPAY_API_KEY")
+
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 

@@ -1,0 +1,26 @@
+ <script src="https://demo.campay.net/sdk/js?app-id=TCC68M4j0l6l26l9mC1IU8LZ0SyM_73UddmsTGE1CFzngF0Px27j-JCZ5r3n-d9oc1NwWR9VfKF76oB4rOzCEg"></script>
+
+                                                            <script>
+                                                                campay.options({
+                                                                    payButtonId: "payButton", //Required
+                                                                    description: "", //Required
+                                                                    amount: "", //Optional
+                                                                    currency: "XAF", //Required
+                                                                    externalReference: "", //Optional
+                                                                    redirectUrl: "", //Optional
+                                                                });
+                                                                
+                                                                campay.onSuccess = function (data) { 
+                                                                    alert('Status: '+data.status+'\n reference: '+data.reference) 
+                                                                }
+                                                                
+                                                                campay.onFail = function (data) { 
+                                                                    alert('Status: '+data.status+'\n reference: '+data.reference) 
+                                                                }
+
+                                                                campay.onModalClose = function (data) { 
+                                                                    alert('Modal: '+data.status+'') 
+                                                                }
+                                                            
+                                                            </script>
+                                                        

@@ -40,3 +40,24 @@ def grade(pct,pass_score):
         return "bg-warning"
     else:
         return "bg-danger"
+    
+@register.filter
+def contains(queryset,item):
+    return queryset.filter(student=item).exists()
+
+   
+@register.filter
+def contains_approved(queryset,item):
+    return queryset.filter(student=item,approved=True).exists()
+
+@register.filter
+def approved(queryset):
+    return queryset.filter(approved=True)
+
+@register.filter
+def pending(queryset):
+    return queryset.filter(approved=False)
+
+@register.filter
+def isteacher(user,teacher):
+    return True if user == teacher else False

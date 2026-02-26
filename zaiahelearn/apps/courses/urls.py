@@ -6,13 +6,13 @@ app_name = "courses"
 
 
 urlpatterns = [
-    path("dashboard/", views.dashboard, name="dashboard"),
+    path("dashboard/", views.student_dashboard, name="dashboard"),
     path("course/<slug:slug>/<int:course_id>/lesson/<int:lesson_id>/", views.lesson_detail, name="lesson_detail"),
     path("course/<slug:slug>/<int:course_id>/lesson/", views.lesson_detail, name="first_lesson_detail"),
     path("courses/explore/", views.course_list, name="course_list"),
     path("enroll/", views.enroll_courses_page, name="enroll_courses"),
     path("enroll/<int:course_id>/", views.enroll_course, name="enroll_course"),
-    path('teacher/lessons/', views.teacher_lessons, name='teacher_dashboard'),
+    path('teacher/lessons/', views.teacher_dashboard, name='teacher_dashboard'),
     path('teacher/lesson/new/', views.lesson_editor, name='lesson_create'),
     path('teacher/lesson/<int:lesson_id>/', views.lesson_editor, name='lesson_edit'),
     path('teach/', views.teacher_application_entry, name='teacher_application'),
@@ -39,12 +39,16 @@ urlpatterns = [
     path("teacher/lesson/<int:lesson_id>/video/<int:video_id>/edit/",views.lesson_video_create_edit,name="lesson_video_edit"),
     path("teacher/lesson/<int:lesson_id>/video/<int:video_id>/delete/",views.lesson_video_delete,name="lesson_video_delete"),
     path("lesson/<int:lesson_id>/ai-quiz-generate/", views.view_ai_quiz, name="generate_ai_quiz"),
-    path("lesson/<int:lesson_id>/ai-quiz/payment/", views.ai_quiz_payment, name="ai_quiz_payment"),
-    path("flutterwave/payment/<uuid:reference>/", views.start_flutterwave_payment, name="start_flutterwave_payment"),
-    path("flutterwave/payment/verify/",views.payment_verify,name="payment_verify"),
     path("teacher/lesson/pdf/add/", views.pdf_create_edit, name="pdf_create"),
     path("teacher/pdf/<int:pdf_id>/edit/", views.pdf_create_edit, name="pdf_edit"),
     path("teacher/lesson/pdfs/", views.pdf_list, name="pdf_list"),
     path("teacher/pdf/<int:pk>/preview/", views.pdf_preview, name="pdf_preview"),
-
+    path("pay/<str:model_name>/<int:object_id>/", views.start_payment, name="start_payment"),
+    path("campay/webhook/", views.campay_webhook, name="campay_webhook"),
+    path("teacher/classroom/create/",views.classroom_create,name="classroom_create"),
+    path("teacher/classroom/list/",views.classroom_list,name="classroom_list"),
+    path("chat/classroom/<int:classroom_id>/",views.classroom_chat,name='classroom_chat'),
+    path("classroom/<int:classroom_id>/approve/student/<int:member_id>/",views.approve_student,name='approve_student'),
+    path("join/classroom/<int:classroom_id>/",views.join_classroom,name='join_classroom'),
+    path("join/classroom/<int:classroom_id>/request/list/",views.join_classroom_request_list,name='join_classroom_request_list'),
 ]   

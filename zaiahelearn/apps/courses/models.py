@@ -3,6 +3,16 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from embed_video.fields import EmbedVideoField
 import uuid
+from decimal import Decimal
+
+from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+
+
+
+
+
 
 class UserRole(models.TextChoices):
     STUDENT = "student", "Student"
@@ -87,7 +97,7 @@ class Lesson(models.Model):
 
 
 class LessonProgress(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE,related_name='lesson_progress')
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
 
     progress_percent = models.FloatField(default=0)
@@ -199,6 +209,80 @@ class LessonQuizAttempt(models.Model):
 
 
 
+
+class Classroom(models.Model):
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_classrooms')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE,null=True)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    live_stream_url = models.URLField(blank=True, null=True, help_text="Link for live stream (Zoom, YouTube, etc.)")
+    live_session_active = models.BooleanField(default=False)
+    live_session_host = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="hosted_sessions"
+    )
+    
+    def __str__(self):
+        return f"{self.title} - {self.teacher.username}"
+    
+
+class ApprovedMembers(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(approved=True)
+
+
+class ClassroomMember(models.Model):
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='members')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='classrooms')
+    joined_at = models.DateTimeField(auto_now_add=True)
+    approved = models.BooleanField(default=False)  # Teacher must approve
+    objects = models.Manager()
+    approved_members = ApprovedMembers()
+
+    class Meta:
+        unique_together = ('classroom', 'student')
+
+
+    def __str__(self):
+        return f"{self.student.username} in {self.classroom.title}"
+    
+    
+
+
+class ClassroomFile(models.Model):
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="files")
+    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    file = models.FileField(upload_to="classroom_files/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+class ClassroomMessage(models.Model):
+    classroom_id = models.IntegerField()
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created"]
+
+    def serialize(self, teacher=None):
+        return {
+            "id": self.id,
+            "username": self.sender.username,
+            "message": self.message,
+            "created": self.created.strftime("%H:%M"),
+            "is_teacher": teacher and self.sender == teacher
+        }
+
+    def __str__(self):
+        return f"{self.sender.username}: {self.message[:20]}"
+
+
+
 class Subscription(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     active = models.BooleanField(default=False)
@@ -255,12 +339,20 @@ class TeacherApplication(models.Model):
 
 
 class Video(models.Model):
-    lesson = models.ForeignKey(Lesson,on_delete=models.CASCADE,related_name='video_lessons')
+    lesson = models.ForeignKey(
+        "Lesson",
+        on_delete=models.CASCADE,
+        related_name="video_lessons"
+    )
+
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
 
-    video_url = EmbedVideoField(verbose_name="Video URL",null=True)
+    video_url = EmbedVideoField(verbose_name="Video URL", null=True)
 
+    # 🔒 PAYMENT FIELDS
+    is_paid = models.BooleanField(default=False)
+    price = models.DecimalField(max_digits=8, decimal_places=2, default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -274,43 +366,90 @@ class Video(models.Model):
     @property
     def has_description(self):
         return bool(self.description.strip()) if self.description else False
-    
 
 
-class AIQuizPayment(models.Model):
 
-    STATUS = (
-        ("pending","Pending"),
-        ("paid","Paid"),
-        ("failed","Failed"),
+
+
+class PDFResource(models.Model):
+    course = models.ForeignKey(
+        "Course",
+        on_delete=models.CASCADE,
+        related_name="resources",
     )
 
-    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="ai_quiz_payment")
-    lesson = models.ForeignKey("Lesson",on_delete=models.CASCADE)
+    author = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="pdf_resources"
+    )
 
-    amount = models.DecimalField(max_digits=6,decimal_places=2)
-    reference = models.UUIDField(default=uuid.uuid4, unique=True)
+    title = models.CharField(max_length=200)
 
-    provider = models.CharField(max_length=50,blank=True)
-    status = models.CharField(max_length=10,choices=STATUS,default="pending")
+    # Content
+    file = models.FileField(upload_to="resources/", blank=True, null=True)
+    external_url = models.URLField(blank=True, null=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    paid_at = models.DateTimeField(null=True,blank=True)
+    # Payment fields
+    is_paid = models.BooleanField(default=False)
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Set price only if paid resource"
+    )
+
+    uploaded_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    def has_file(self):
+        return bool(self.file or self.external_url)
 
     def __str__(self):
-        return f"{self.user} - {self.lesson} - {self.status}"
-    
+        return f"{self.course.title} - {self.title}"
+
+
+
+
+class Purchase(models.Model):
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="purchases"
+    )
+
+    # Generic relation (PDF, Video, Quiz, etc)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    item = GenericForeignKey("content_type", "object_id")
+
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    paid = models.BooleanField(default=False)
+
+    campay_reference = models.CharField(max_length=120, blank=True, null=True)
+    external_reference = models.CharField(max_length=120, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("student", "content_type", "object_id")
+
+    def __str__(self):
+        return f"{self.student} → {self.item}"
+
+
+
+
+
+
 class AIQuiz(models.Model):
     lesson = models.ForeignKey("Lesson",on_delete=models.CASCADE)
     user = models.ForeignKey(User,on_delete=models.CASCADE)
 
     created_at = models.DateTimeField(auto_now_add=True)
-    source_payment = models.OneToOneField(
-        AIQuizPayment,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
+    # 🔒 PAYMENT FIELDS
+    price = models.PositiveIntegerField(default=250)
+    is_paid = models.BooleanField(default=True)
 
     def __str__(self):
         return f"AI Quiz for {self.lesson}"
@@ -324,26 +463,6 @@ class AIQuizQuestion(models.Model):
     option_c = models.CharField(max_length=255)
     option_d = models.CharField(max_length=255)
     correct_answer = models.CharField(max_length=1)  # A/B/C/D
-
-
-class PDFResource(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='resources', null=True)
-    author = models.ForeignKey(User,on_delete=models.CASCADE,related_name='resource',null=True)
-    title = models.CharField(max_length=200)
-    #uploaded pdfs
-    file = models.FileField(upload_to='resources/',blank=True,null=True)
-    #external pdf
-    external_url = models.URLField(blank=True,null=True,help_text="Paste Google Drive, Dropbox, or driect PDF link")
-
-    uploaded_at = models.DateTimeField(auto_now_add=True,db_index=True)
-
-    def has_file(self):
-        return bool(self.file or self.external_url)
-    
-    def __str__(self):
-        return f"{self.course.title} - {self.title}"
-    
-
 
 '''
 class Profile(models.Model):
