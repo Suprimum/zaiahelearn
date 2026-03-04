@@ -1,126 +1,158 @@
 {% extends "base.html" %}
 {% load dict_extra %}
+{% load static %}
 
 {% block hero-section %}
-<section class="bg-gradient bg-dark text-white text-center py-5">
-    <div class="container">
-        <h1 class="display-5 fw-bold">⭐ Student Dashboard</h1>
-        <p class="lead opacity-75">Track your learning, join classrooms, and continue your courses.</p>
+<section class="position-relative text-white text-center d-flex align-items-center"
+         style="min-height:320px;
+                background:url('https://images.unsplash.com/photo-1707157281599-d155d1da5b4c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D') center/cover no-repeat;">
+    <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark opacity-75"></div>
+
+    <div class="container position-relative z-1 py-5">
+        <h1 class="display-5 fw-bold">Student Dashboard</h1>
+        <p class="lead opacity-75">Track progress • Join classrooms • Continue learning</p>
     </div>
 </section>
 {% endblock %}
 
 
+
 {% block navbar %}
-<nav class="navbar navbar-dark bg-black sticky-top shadow-sm" style="margin-top:-7.1vh;">
+<nav class="navbar navbar-expand-lg navbar-dark bg-black sticky-top shadow-sm">
     <div class="container-fluid px-4">
-        <button class="btn btn-outline-light d-lg-none me-3"
-                data-bs-toggle="offcanvas"
-                data-bs-target="#lessonSidebar">☰</button>
+        <a class="navbar-brand fw-bold" href="#">Zaiah E-Learn</a>
 
-        <span class="navbar-brand fw-bold">Zaiah E-Learn</span>
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#mainNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-        <div class="ms-auto d-flex gap-2">
-            <a class="btn btn-sm btn-outline-light" href="{% url 'home' %}">Home</a>
-            <a class="btn btn-sm btn-outline-light" href="{% url 'courses:enroll_courses' %}">Courses</a>
-            <a class="btn btn-sm btn-danger" href="{% url 'account_logout' %}">Logout</a>
+        <div class="collapse navbar-collapse" id="mainNavbar">
+            <ul class="navbar-nav ms-auto gap-2">
+                <li class="nav-item">
+                    <a class="btn btn-sm btn-outline-light" href="{% url 'home' %}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="btn btn-sm btn-outline-light" href="{% url 'courses:enroll_courses' %}">Courses</a>
+                </li>
+                <li class="nav-item">
+                    <a class="btn btn-sm btn-danger" href="{% url 'account_logout' %}">Logout</a>
+                </li>
+            </ul>
         </div>
     </div>
 </nav>
 {% endblock %}
 
 
+
 {% block content %}
-<div class="container-fluid px-4 py-5">
+<div class="container py-5">
 
-    <!-- WELCOME -->
-    <section class="mb-5">
-        <div class="p-4 bg-light rounded-4 shadow-sm">
-            <h3 class="fw-bold">Welcome back, {{ request.user.username|title }} 👋</h3>
-            <p class="text-muted mb-0">Here’s your academic performance overview.</p>
+    <!-- Welcome Card -->
+    <div class="card border-0  rounded-4 mb-5 glass-card">
+        <div class="card-body p-4">
+            <h4 class="fw-bold">Welcome back, {{ request.user.username|title }} 👋</h4>
+            <p class="text-muted mb-0">Your academic performance overview.</p>
         </div>
-    </section>
+    </div>
 
 
+    
     <!-- STATS SECTION -->
-    <section class="mb-5">
-        <div class="row g-4">
+<section class="mb-5">
+    <div class="row g-4">
 
-            <div class="col-6 col-lg-3">
-                <div class="card rounded-4 border-0 shadow-sm text-center p-4 h-100">
-                    <h2 class="fw-bold">{{ courses_count }}</h2>
-                    <small class="text-muted">Courses Enrolled</small>
-                </div>
+        <!-- Courses Enrolled -->
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow rounded-4 text-center p-4 hover-lift h-100">
+                <h2 class="fw-bold counter" data-target="{{ courses_count }}">0</h2>
+                <small class="text-muted">Courses Enrolled</small>
             </div>
-
-            <div class="col-6 col-lg-3">
-                <div class="card rounded-4 border-0 shadow-sm text-center p-4 h-100">
-                    <h2 class="fw-bold">{{ lessons_completed }}</h2>
-                    <small class="text-muted">Lessons Completed</small>
-                </div>
-            </div>
-
-            <div class="col-6 col-lg-3">
-                <div class="card rounded-4 border-0 shadow-sm text-center p-4 h-100">
-                    <h2 class="fw-bold">{{ quizzes_taken }}</h2>
-                    <small class="text-muted">Quizzes Taken</small>
-                </div>
-            </div>
-
-            <div class="col-6 col-lg-3">
-                <div class="card rounded-4 border-0 shadow-sm text-center p-4 bg-success text-white h-100">
-                    <h2 class="fw-bold">{{ overall_progress }}%</h2>
-                    <small>Overall Progress</small>
-                </div>
-            </div>
-
         </div>
-    </section>
+
+        <!-- Lessons Completed -->
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow rounded-4 text-center p-4 hover-lift h-100">
+                <h2 class="fw-bold counter" data-target="{{ lessons_completed }}">0</h2>
+                <small class="text-muted">Lessons Completed</small>
+            </div>
+        </div>
+
+        <!-- Quizzes Taken -->
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow rounded-4 text-center p-4 hover-lift h-100">
+                <h2 class="fw-bold counter" data-target="{{ quizzes_taken }}">0</h2>
+                <small class="text-muted">Quizzes Taken</small>
+            </div>
+        </div>
+
+        <!-- Overall Progress -->
+        <div class="col-6 col-lg-3">
+            <div class="card bg-success text-white border-0 shadow rounded-4 text-center p-4 hover-lift h-100">
+                <h2 class="fw-bold counter" data-target="{{ overall_progress }}">0</h2>
+                <small>Overall Progress (%)</small>
+            </div>
+        </div>
+
+    </div>
+</section>
 
 
-    <!-- MY COURSES -->
-    <section class="mb-5 p-4 rounded-4 shadow-sm" style="background:#f8f9fa;">
-        <h4 class="fw-bold mb-4">📚 My Courses</h4>
+
+    <!-- Courses -->
+    <section class="mb-5">
+        <h4 class="fw-bold mb-4">My Courses</h4>
 
         {% for course in enrolled_courses %}
-        <div class="card rounded-4 border-0 shadow-sm mb-4">
-            <div class="card-body p-4">
+        <div class="card mb-4 border-0 shadow rounded-4 hover-lift">
+            <div class="row g-0">
 
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <h5 class="fw-bold mb-1">{{ course.title }}</h5>
-                        <span class="badge bg-primary">Enrolled</span>
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <a href="{% url 'courses:course_quiz_page' course.id %}"
-                           class="btn btn-outline-success btn-sm">Quiz</a>
-
-                        <a href="{% url 'courses:first_lesson_detail' course.slug course.id %}"
-                           class="btn btn-primary btn-sm">Continue</a>
-                    </div>
+                <!-- Course Image -->
+                <div class="col-md-4">
+                    <img src="{{ course.image }}"
+                         class="img-fluid rounded-start h-100 object-fit-cover"
+                         loading="lazy">
                 </div>
 
-                <hr>
+                <div class="col-md-8">
+                    <div class="card-body p-3 d-flex flex-column h-100">
 
-                <div class="row g-3">
-                    {% for lesson in popular_lessons|get_item:course.id|slice:":3" %}
-                    <div class="col-md-4">
-                        <div class="card rounded-4 border-0 shadow-sm h-100">
-                            <div class="card-body d-flex flex-column">
-                                <h6 class="fw-semibold">{{ lesson.title }}</h6>
-                                <small class="text-muted mb-3">{{ lesson.views }} views</small>
-
-                                <a href="{% url 'courses:lesson_detail' lesson.course.slug lesson.course.id lesson.id %}"
-                                   class="btn btn-outline-primary btn-sm mt-auto">
-                                    Open Lesson
-                                </a>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h5 class="fw-bold">{{ course.title }}</h5>
+                                <span class="badge bg-primary">Enrolled</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'courses:course_quiz_page' course.id %}"
+                                   class="btn btn-outline-success btn-sm p-2" style="height:max-content;">Quiz</a>
+                                <a href="{% url 'courses:first_lesson_detail' course.slug course.id %}"
+                                   class="btn btn-primary btn-sm p-2" style="height: max-content;">Continue</a>
                             </div>
                         </div>
+
+                        <!-- Progress Bar -->
+                        <div class="mt-4">
+                            <div class="progress rounded-pill" style="height:10px;">
+                                <div class="progress-bar"
+                                     role="progressbar"
+                                     style="width: {{ course.lessons.all|course_progress:request.user|default:0 }}%">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                {{ course.lessons.all|course_progress:request.user|default:0 }}% completed
+                            </small>
+                        </div>
+
+                        <div class="mt-auto d-flex justify-content-end gap-2">
+                            <a href="{% url 'courses:unenroll_course' course.id %}" class="btn btn-danger btn-sm">
+                                Unenroll
+                            </a>
+                        </div>
+
                     </div>
-                    {% empty %}
-                    <p class="text-muted">No lessons available.</p>
-                    {% endfor %}
                 </div>
 
             </div>
@@ -128,93 +160,66 @@
         {% empty %}
         <div class="text-center py-5">
             <p class="text-muted">You are not enrolled in any courses yet.</p>
-            <a href="{% url 'courses:enroll_courses' %}" class="btn btn-primary">Browse Courses</a>
+            <a href="{% url 'courses:enroll_courses' %}" class="btn btn-primary">
+                Browse Courses
+            </a>
         </div>
         {% endfor %}
     </section>
 
 
-    <!-- CLASSROOMS -->
-    <section class="mb-5 p-4 rounded-4 shadow-sm" style="background:#eef2ff;">
-        <h4 class="fw-bold mb-4">🏫 Classrooms</h4>
 
+    <!-- Classrooms -->
+    <section class="mb-5">
+        <h4 class="fw-bold mb-4">Classrooms</h4>
         <div class="row g-4">
-            {% for classroom in classrooms %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card rounded-4 border-0 shadow h-100">
-                    <div class="card-body d-flex flex-column p-4">
 
+            {% for classroom in classrooms %}
+            <div class="col-md-4">
+                <div class="card border-0 shadow rounded-4 hover-lift h-100">
+                    <div class="card-body p-4 d-flex flex-column">
                         <h5 class="fw-bold">{{ classroom.title }}</h5>
                         <p class="text-muted small flex-grow-1">
-                            {{ classroom.description|truncatewords:20 }}
+                            {{ classroom.description|truncatewords:18 }}
                         </p>
 
                         {% if classroom.members.all|contains_approved:request.user %}
-                            <div class="d-grid gap-2">
-                                {% if classroom.live_stream_url %}
+                            {% if classroom.live_stream_url %}
                                 <a href="{{ classroom.live_stream_url }}"
                                    target="_blank"
-                                   class="btn btn-warning btn-sm">
-                                   Join Live
+                                   class="btn btn-warning btn-sm mb-2">
+                                    Join Live
                                 </a>
-                                {% endif %}
-                                <a href="{% url 'courses:classroom_chat' classroom.id %}"
-                                   class="btn btn-primary btn-sm">
-                                   Open Chat
-                                </a>
-                            </div>
+                            {% endif %}
+                            <a href="{% url 'courses:classroom_chat' classroom.id %}"
+                               class="btn btn-primary btn-sm">
+                                Open Chat
+                            </a>
                         {% else %}
                             <a href="{% url 'courses:join_classroom' classroom.id %}"
-                               class="btn btn-success btn-sm mt-auto">
-                               Request Access
+                               class="btn btn-success btn-sm">
+                                Request Access
                             </a>
                         {% endif %}
-
                     </div>
                 </div>
             </div>
             {% empty %}
             <p class="text-muted">No classrooms available.</p>
             {% endfor %}
+
         </div>
     </section>
 
 
-    <!-- ENROLL SECTION (Independent Scroll Container) -->
-    <section class="p-4 rounded-4 shadow-sm" style="background:#f1fdf6;">
-        <h4 class="fw-bold mb-4">🚀 Enroll in a Course</h4>
 
-        <div style="max-height:400px; overflow-y:auto;">
-            <div class="row g-4">
-                {% for course in available_courses %}
-                <div class="col-md-6 col-lg-4">
-                    <div class="card rounded-4 border-0 shadow-sm h-100">
-                        <div class="card-body d-flex flex-column p-4">
-                            <h6 class="fw-bold">{{ course.title }}</h6>
-                            <small class="text-muted mb-3">{{ course.level }}</small>
-
-                            <a href="{% url 'courses:enroll_course' course.id %}"
-                               class="btn btn-success mt-auto">
-                               Enroll Now
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                {% empty %}
-                <p class="text-muted">You are enrolled in all available courses.</p>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
-
-
-    <!-- DANGER ZONE -->
+    <!-- Danger Zone -->
     <section class="mt-5">
-        <div class="card border-danger rounded-4 shadow-sm">
+        <div class="card border-danger shadow rounded-4">
             <div class="card-body p-4">
                 <h5 class="text-danger fw-bold">Danger Zone</h5>
                 <p class="text-muted">
-                    Deleting your account permanently removes all academic progress.
+                    Deleting your account permanently removes all progress.
                 </p>
                 <a href="{% url 'account_delete' %}" class="btn btn-danger">
                     Delete Account
@@ -227,13 +232,78 @@
 {% endblock %}
 
 
+
+{% block extra_css %}
+<style>
+.glass-card {
+    backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.75);
+}
+.hover-lift {
+    transition: all .3s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,.15);
+}
+.object-fit-cover {
+    object-fit: cover;
+}
+</style>
+{% endblock %}
+
+
+
 {% block extra_js %}
 <script>
-socket.onmessage = function(e){
-    const data = JSON.parse(e.data);
-    if(data.type === "live_notification"){
-        showToast(data.message);
+/* Animated Counter */
+document.querySelectorAll('.counter').forEach(counter => {
+    const target = +counter.dataset.target;
+    let count = 0;
+    const speed = target / 60;
+
+    const update = () => {
+        count += speed;
+        if (count < target) {
+            counter.innerText = Math.ceil(count);
+            requestAnimationFrame(update);
+        } else {
+            counter.innerText = target;
+        }
+    };
+    update();
+});
+
+
+/* WebSocket Safe Initialization */
+if (typeof socket !== "undefined") {
+    socket.onmessage = function(e){
+        const data = JSON.parse(e.data);
+        if(data.type === "live_notification"){
+            showToast(data.message);
+        }
     }
 }
+
+/* Bootstrap Toast */
+function showToast(message){
+    const toastHTML = `
+    <div class="toast align-items-center text-bg-primary border-0 show position-fixed bottom-0 end-0 m-4">
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                    onclick="this.closest('.toast').remove()"></button>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', toastHTML);
+}
 </script>
+{% endblock %}
+
+
+
+{% block footer %}
+<footer class="bg-dark text-white text-center py-4 mt-5">
+    <small>© 2026 Zaiah E-Learn Platform • Enterprise Edition</small>
+</footer>
 {% endblock %}

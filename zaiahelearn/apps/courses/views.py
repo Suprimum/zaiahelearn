@@ -1,18 +1,17 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import (
             Course, Lesson, LessonProgress,
             AIQuiz, PDFResource, Purchase,
             Video, Classroom, ClassroomMember,
-            ClassroomFile
+            ClassroomFile, Teacher
         )
 from .forms import  ContactForm, ClassroomForm
-from .utils import  teacher_required, generate_quiz_with_ai
+from .utils import  teacher_required
 from django.contrib import messages
 
 
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.core.mail import send_mail
@@ -32,6 +31,63 @@ from .course_views import *
 
 
 
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def admin_dashboard(request):
+    total_users = get_user_model().objects.count()
+    total_teachers = Teacher.objects.all()
+    total_courses = Course.objects.count()
+    total_lessons = Lesson.objects.count()
+    total_classrooms = Classroom.objects.count()
+
+    teacher_applications = TeacherApplication.objects.filter(status="pending")
+
+    if request.method == "POST":
+        application_id = request.POST.get("application_id")
+        action = request.POST.get("action")
+
+        if action == "approve":
+            application = get_object_or_404(TeacherApplication, id=application_id)
+            application.status = "approved"
+            application.save()
+
+            get_teacher, new_teacher = Teacher.objects.update_or_create(
+                user=application.user, 
+                defaults={
+                    "approved": True,
+                    "subjects": application.subject,
+                    "bio": f"{application.experience_years} years of experience in {application.subject}"
+                }
+            )
+
+
+            if new_teacher:
+                print (f"Created new Teacher profile for user: {application.user.username}")
+            else:
+                print (f"Updated existing Teacher profile for user: {get_teacher.user.username}")
+
+            messages.success(request, f"Application for {application.user.username} has been approved.")
+
+        elif action == "reject":
+            application = get_object_or_404(TeacherApplication, id=application_id)
+            application.status = "rejected"
+            application.delete()  # Optionally delete the application
+            messages.success(request, f"Application for {application.user.username} has been rejected.")
+        else:
+            messages.error(request, "There was an error processing the application.")
+    
+
+    context = {
+        "total_users": total_users,
+        "total_teachers": total_teachers,
+        "total_courses": total_courses,
+        "total_lessons": total_lessons,
+        "total_classrooms": total_classrooms,
+        "teacher_applications": teacher_applications,
+    }
+
+    return render(request, "admin/dashboard.html", context)
 
 
 @login_required
@@ -198,6 +254,8 @@ def teacher_dashboard(request):
 
     if lessons:
         courses = (Course.objects.in_bulk(set(lessons.values_list('course',flat=True)))).items()
+    else:
+        courses = []
     
     context = {
         'lessons': lessons,

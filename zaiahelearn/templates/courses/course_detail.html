@@ -3,6 +3,154 @@
 {% load embed_video_tags %}
 
 {% block extra_css %}
+
+<style>
+
+/* =========================
+   GLOBAL UI ENHANCEMENTS
+========================= */
+
+body{
+    background:#f4f6f9;
+    scroll-behavior:smooth;
+}
+
+.card{
+    border:none;
+    border-radius:16px;
+    transition:all .25s ease;
+}
+
+.card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 10px 25px rgba(0,0,0,0.08);
+}
+
+.btn{
+    border-radius:10px;
+    transition:all .2s ease;
+}
+
+.btn:hover{
+    transform:translateY(-2px);
+}
+
+/* =========================
+   HERO SECTION (UPGRADED)
+========================= */
+
+.hero-section{
+    position:relative;
+    padding:80px 0;
+    background:
+        linear-gradient(rgba(0,0,0,.65), rgba(0,0,0,.65)),
+        url("https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070") center/cover no-repeat;
+    background-attachment:fixed;
+}
+
+.hero-section h1{
+    font-weight:700;
+    letter-spacing:.5px;
+}
+
+/* =========================
+   NAVBAR GLASS EFFECT
+========================= */
+
+.course-navbar{
+    backdrop-filter:blur(8px);
+    background:rgba(0,0,0,0.85) !important;
+    border-bottom:1px solid rgba(255,255,255,.1);
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+
+.sidebar-sticky{
+    top:90px;
+}
+
+.list-group-item{
+    border:none;
+    border-radius:8px;
+    margin-bottom:4px;
+}
+
+.list-group-item.active{
+    background:#0d6efd !important;
+    border-left:4px solid #ffc107;
+    font-weight:600;
+}
+
+/* =========================
+   PROGRESS BAR ENHANCED
+========================= */
+
+.progress{
+    height:10px;
+    border-radius:50px;
+    background:#e9ecef;
+}
+
+.progress-bar{
+    background:linear-gradient(90deg,#198754,#20c997);
+    border-radius:50px;
+    transition:width .4s ease;
+}
+
+/* =========================
+   LESSON CONTENT
+========================= */
+
+#lessonContent{
+    font-size:1.05rem;
+    line-height:1.7;
+}
+
+.math-content mjx-container{
+    overflow-x:auto !important;
+}
+
+/* =========================
+   VIDEO / PDF CARDS
+========================= */
+
+.ratio iframe{
+    border-radius:12px;
+}
+
+.badge{
+    font-size:.7rem;
+    padding:.4em .6em;
+}
+
+/* =========================
+   ANIMATED FADE IN
+========================= */
+
+.fade-in{
+    opacity:0;
+    transform:translateY(20px);
+    transition:all .6s ease;
+}
+
+.fade-in.visible{
+    opacity:1;
+    transform:translateY(0);
+}
+
+/* =========================
+   MOBILE IMPROVEMENTS
+========================= */
+
+@media(max-width:768px){
+    .hero-section{
+        padding:50px 0;
+        background-attachment:scroll;
+    }
+}
+</style>
 <style>
 
 /* ---------- Layout ---------- */
@@ -609,34 +757,34 @@ document.addEventListener("DOMContentLoaded", function () {
     let maxProgress = parseFloat("{{ saved_percent|default:0 }}") || 0;
     let lastScroll = parseInt("{{ saved_scroll|default:0 }}") || 0;
 
-    /* ---------------- TAB CHECK ---------------- */
-    function lessonTabActive() {
-        return lessonTab &&
-            lessonTab.classList.contains("show") &&
-            lessonTab.classList.contains("active");
+    /* =============================
+       SMOOTH RESTORE SCROLL
+    ============================= */
+
+    function restoreScroll(){
+        requestAnimationFrame(()=>{
+            window.scrollTo({ top:lastScroll, behavior:"auto" });
+        });
     }
 
-    /* ---------------- RESTORE SCROLL (SAFE) ---------------- */
-    function restoreScroll() {
-        setTimeout(() => {
-            window.scrollTo({
-                top: lastScroll,
-                behavior: "auto"
-            });
-        }, 400); // wait for layout & MathJax
-    }
-
-    /* If MathJax exists, wait for it */
-    if (window.MathJax) {
+    if(window.MathJax){
         MathJax.typesetPromise().then(restoreScroll);
-    } else {
+    }else{
         restoreScroll();
     }
 
-    /* ---------------- PROGRESS CALCULATION ---------------- */
-    function calculateProgress() {
+    /* =============================
+       PROGRESS CALCULATION
+    ============================= */
 
-        if (!content || !lessonTabActive()) return maxProgress;
+    function lessonTabActive(){
+        return lessonTab &&
+               lessonTab.classList.contains("show") &&
+               lessonTab.classList.contains("active");
+    }
+
+    function calculateProgress(){
+        if(!content || !lessonTabActive()) return maxProgress;
 
         const rect = content.getBoundingClientRect();
         const contentTop = window.scrollY + rect.top;
@@ -645,102 +793,112 @@ document.addEventListener("DOMContentLoaded", function () {
         const viewportBottom = window.scrollY + window.innerHeight;
         const scrolled = viewportBottom - contentTop;
 
-        const percent = (scrolled / contentHeight) * 100;
-
-        return Math.max(0, Math.min(100, percent));
+        return Math.max(0, Math.min(100, (scrolled/contentHeight)*100));
     }
 
-    /* ---------------- UI UPDATE ---------------- */
-    function updateUI(p) {
+    function updateUI(p){
         p = Math.round(p);
 
         document.querySelectorAll("#readingProgress,#readingProgressMobile")
-            .forEach(bar => {
-                if (bar) bar.style.width = p + "%";
-            });
+            .forEach(bar=> bar && (bar.style.width = p + "%"));
 
         document.querySelectorAll("#progressText,#progressTextMobile")
-            .forEach(txt => {
-                if (txt) txt.textContent = p + "%";
-            });
+            .forEach(txt=> txt && (txt.textContent = p + "%"));
     }
 
     updateUI(maxProgress);
 
-    /* ---------------- SCROLL TRACKING ---------------- */
-    window.addEventListener("scroll", function () {
-
-        if (!lessonTabActive()) return;
+    window.addEventListener("scroll", ()=>{
+        if(!lessonTabActive()) return;
 
         const current = calculateProgress();
 
-        if (current > maxProgress) {
+        if(current > maxProgress){
             maxProgress = current;
             updateUI(maxProgress);
         }
     });
 
-    /* ---------------- SAVE PROGRESS ---------------- */
-    function saveProgress() {
+    /* =============================
+       SAVE PROGRESS
+    ============================= */
 
-        if (!lessonTabActive()) return;
+    function saveProgress(){
+        if(!lessonTabActive()) return;
 
-        const data = new FormData();
-        data.append("percent", maxProgress);
-        data.append("scroll", window.scrollY);
-        data.append("csrfmiddlewaretoken", "{{ csrf_token }}");
-
-        fetch("{% url 'courses:save_lesson_progress' cur_lesson.id %}", {
-            method: "POST",
-            body: data
+        fetch("{% url 'courses:save_lesson_progress' cur_lesson.id %}",{
+            method:"POST",
+            headers:{ "X-CSRFToken":"{{ csrf_token }}" },
+            body:new URLSearchParams({
+                percent:maxProgress,
+                scroll:window.scrollY
+            })
         });
     }
 
-    /* Save before navigation links */
     document.querySelectorAll(".save-before-nav")
-        .forEach(link => link.addEventListener("click", saveProgress));
+        .forEach(link=>link.addEventListener("click",saveProgress));
 
-    /* Save on unload */
-    window.addEventListener("beforeunload", saveProgress);
+    window.addEventListener("beforeunload",saveProgress);
 
-    /* ---------------- NEXT / PREV ---------------- */
-    window.next_prev_lesson = function (direction) {
+    /* =============================
+       NEXT / PREV
+    ============================= */
 
-        const data = new FormData();
-        data.append("percent", maxProgress);
-        data.append("scroll", window.scrollY);
-        data.append("direction", direction);
-        data.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+    window.next_prev_lesson = function(direction){
 
-        fetch("{% url 'courses:next_prev_lesson' cur_lesson.id %}", {
-            method: "POST",
-            body: data
+        fetch("{% url 'courses:next_prev_lesson' cur_lesson.id %}",{
+            method:"POST",
+            headers:{ "X-CSRFToken":"{{ csrf_token }}" },
+            body:new URLSearchParams({
+                percent:maxProgress,
+                scroll:window.scrollY,
+                direction:direction
+            })
         })
-        .then(res => res.json())
-        .then(res => {
-            if (res.url) {
-                window.location.href = res.url;
-            }
+        .then(res=>res.json())
+        .then(res=>{
+            if(res.url) window.location.href = res.url;
         });
     };
 
-    /* ---------------- RESET ---------------- */
-    window.reset_progress = function () {
+    /* =============================
+       RESET
+    ============================= */
 
-        fetch("{% url 'courses:reset_lesson_progress' cur_lesson.id %}", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": "{{ csrf_token }}"
-            }
+    window.reset_progress = function(){
+
+        fetch("{% url 'courses:reset_lesson_progress' cur_lesson.id %}",{
+            method:"POST",
+            headers:{ "X-CSRFToken":"{{ csrf_token }}" }
         })
-        .then(res => res.json())
-        .then(() => {
+        .then(()=>{
+
             maxProgress = 0;
             lastScroll = 0;
             updateUI(0);
-            window.scrollTo({ top: 0, behavior: "smooth" });
+
+            window.scrollTo({ top:0, behavior:"smooth" });
         });
     };
+
+    /* =============================
+       SCROLL FADE IN ANIMATION
+    ============================= */
+
+    const observer = new IntersectionObserver(entries=>{
+        entries.forEach(entry=>{
+            if(entry.isIntersecting){
+                entry.target.classList.add("visible");
+            }
+        });
+    });
+
+    document.querySelectorAll(".card, #lessonContent")
+        .forEach(el=>{
+            el.classList.add("fade-in");
+            observer.observe(el);
+        });
 
 });
 </script>

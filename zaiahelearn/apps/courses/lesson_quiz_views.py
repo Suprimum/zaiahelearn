@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Lesson, Quiz, Question, LessonQuizAttempt, QuestionBank, Choice, AIQuiz, Course
 from django.utils import timezone
 from .forms import QuizForm
-from .utils import teacher_required, save_question, student_required, generate_quiz_with_ai
+from .utils import teacher_required, save_question, student_required
 from django.contrib import messages
 from django.db.models import Avg, Count, Q
 from django.core.exceptions import PermissionDenied

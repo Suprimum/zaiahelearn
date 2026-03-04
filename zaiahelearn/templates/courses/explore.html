@@ -1,106 +1,219 @@
 {% extends "base.html" %}
 
-
 {% block hero-section %}
-    <section class="hero-section text-white text-center">
-        <div class="container">
-            <h1 class="display-4 fw-bold">Explore Courses</h1>
-            <p class="lead mt-3">Discover lessons crafted by experienced teachers.</p>
+<section class="hero-section d-flex align-items-center text-white">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold">Explore Our Courses</h1>
+        <p class="lead mt-3">Discover structured lessons crafted by expert teachers.</p>
 
-             <!-- Search -->
-            <form class="row justify-content-center mb-4">
-                <div class="col-md-6">
+        <!-- Search -->
+        <form class="row justify-content-center mt-4">
+            <div class="col-md-6">
+                <div class="input-group input-group-lg shadow">
                     <input
                         type="text"
                         name="q"
                         value="{{ query }}"
-                        class="form-control form-control-lg"
+                        class="form-control"
                         placeholder="Search courses..."
-                        onkeypress="if(event.key === 'Enter') { event.preventDefault(); search(this); }"
-                    >
+                        onkeypress="if(event.key === 'Enter'){event.preventDefault(); search(this);}">
+                    <button class="btn btn-primary" type="button" onclick="search(this.previousElementSibling)">
+                        <i class="fas fa-search"></i>
+                    </button>
                 </div>
-            </form>
-        </div>
-    </section>
-    
+            </div>
+        </form>
+
+    </div>
+</section>
 {% endblock %}
 
 {% block navbar %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
-        <div class="container-fluid"> 
-            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
-                <span class="navbar-toggler-icon"></span> 
-            </button> 
-            <div class="collapse navbar-collapse" id="navbarNav"> 
-                <ul class="navbar-nav ms-auto"> 
-                    <li class="nav-item"> 
-                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
-                    </li> 
-                    {% if user.is_authenticated %}
-                    <li class="nav-item"> 
-                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
-                    </li>
-                    {% else %}
-                    <li class="nav-item"> 
-                        <a class="nav-link" href="{% url 'account_login' %}">Login</a>
-                    </li>
-                    {% endif %} 
-                </ul>
-            </div>
-        </div>
-    </nav>
-{% endblock %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{% url 'home' %}">ZaiaheLearn</a>
 
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
+
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'home' %}">Home</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'courses:course_list' %}">Courses</a>
+                </li>
+
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="btn btn-outline-light ms-lg-3" href="{% url 'account_login' %}">Login</a>
+                </li>
+                {% endif %}
+
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endblock %}
 
 {% block content %}
 
-<div class="container py-5">
-  <!-- Courses Grid -->
-  <div class="row g-4">
+<section class="py-5 bg-light">
+<div class="container">
 
-    {% for course in courses %}
-    <div class="col-md-6 col-lg-4">
-      <div class="card h-100 shadow-sm">
+<div class="row g-4">
 
-        <div class="card-body">
-          <h5 class="fw-bold">
-            {{ course.title }} ({{ course.level }})
-          </h5>
+{% for course in courses %}
+<div class="col-md-6 col-lg-4">
 
-          <p class="text-muted small">
-            {{ course.description|truncatechars:100 }}
-          </p>
-        </div>
+<div class="card enterprise-card h-100 border-0 shadow-sm">
 
-        <div class="card-footer bg-white border-0">
-          <a href="{% if user.is_authenticated %}{% url 'courses:first_lesson_detail' course.slug course.id %}{% else %}{% url 'account_login' %}{% endif %}"
-             class="btn btn-outline-primary w-100 {% if course.lessons.count == 0 %} disabled {% endif %}">
-            View Course 
-          </a>
-        </div>
+    <!-- Dynamic Education Image -->
+    {% with course.title|lower as title %}
 
-      </div>
+{% if "math" in title %}
+    <img src="https://images.unsplash.com/photo-1509228468518-180dd4864904?q=80&w=1200&auto=format&fit=crop"
+         class="card-img-top" style="height:220px;object-fit:cover;">
+
+{% elif "physics" in title %}
+    <img src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=1200&auto=format&fit=crop"
+         class="card-img-top" style="height:220px;object-fit:cover;">
+
+{% elif "chemistry" in title %}
+    <img src="https://images.unsplash.com/photo-1581093458791-9d2b4e3a9b3f?q=80&w=1200&auto=format&fit=crop"
+         class="card-img-top" style="height:220px;object-fit:cover;">
+
+{% elif "biology" in title %}
+    <img src="https://images.unsplash.com/photo-1530210124550-912dc1381cb8?q=80&w=1200&auto=format&fit=crop"
+         class="card-img-top" style="height:220px;object-fit:cover;">
+
+{% elif "computer" in title %}
+    <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1200&auto=format&fit=crop"
+         class="card-img-top" style="height:220px;object-fit:cover;">
+
+{% elif "statistics" in title %}
+    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200&auto=format&fit=crop"
+         class="card-img-top" style="height:220px;object-fit:cover;">
+
+{% elif "mechanics" in title %}
+    <img src="https://images.unsplash.com/photo-1632571401005-458e9d244591?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+         class="card-img-top" style="height:220px;object-fit:cover;">
+
+{% elif "geography" in title %}
+    <img src="https://images.unsplash.com/photo-1506905925376-ccdc3489d8d1?q=80&w=1200&auto=format&fit=crop"
+         class="card-img-top" style="height:220px;object-fit:cover;">
+
+{% elif "history" in title %}
+    <img src="https://images.unsplash.com/photo-1509228468518-180dd4864904?q=80&w=1200&auto=format&fit=crop"
+         class="card-img-top" style="height:220px;object-fit:cover;">
+
+{% elif "economics" in title %}
+    <img src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=1200&auto=format&fit=crop"
+         class="card-img-top" style="height:220px;object-fit:cover;">
+
+{% else %}
+    <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=1200&auto=format&fit=crop"
+         class="card-img-top" style="height:220px;object-fit:cover;">
+{% endif %}
+
+{% endwith %}
+
+    <div class="card-body d-flex flex-column">
+
+        <span class="badge bg-primary mb-2 w-auto">
+            {{ course.level }}
+        </span>
+
+        <h5 class="fw-bold">{{ course.title }}</h5>
+
+        <p class="text-muted small flex-grow-1">
+            {{ course.description|truncatechars:120 }}
+        </p>
+
+        <a href="{% if user.is_authenticated %}
+                  {% url 'courses:first_lesson_detail' course.slug course.id %}
+                  {% else %}
+                  {% url 'account_login' %}
+                  {% endif %}"
+           class="btn btn-primary w-100 mt-auto {% if course.lessons.count == 0 %} disabled {% endif %}">
+            {% if user.is_authenticated %}
+                View Course
+            {% else %}
+                Login to Access
+            {% endif %}
+        </a>
+
     </div>
-    {% empty %}
-    <div class="col-12 text-center text-muted">
-      No courses found.
-    </div>
-    {% endfor %}
-
-  </div>
-
 </div>
 
+</div>
+{% empty %}
+<div class="col-12 text-center text-muted py-5">
+    <h5>No courses found.</h5>
+</div>
+{% endfor %}
+
+</div>
+</div>
+</section>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+
+/* HERO */
+.hero-section {
+    background: linear-gradient(rgba(0,0,0,0.65),rgba(0,0,0,0.65)),
+    url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2070");
+    background-size: cover;
+    background-position: center;
+    padding: 7rem 0;
+}
+
+/* ENTERPRISE CARDS */
+.enterprise-card {
+    border-radius: 18px;
+    transition: all 0.3s ease;
+}
+
+.enterprise-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+}
+
+/* SEARCH BAR */
+.input-group .form-control {
+    border-radius: 50px 0 0 50px;
+}
+
+.input-group .btn {
+    border-radius: 0 50px 50px 0;
+}
+
+/* Mobile Optimization */
+@media (max-width: 576px) {
+    .hero-section {
+        padding: 5rem 1rem;
+    }
+}
+
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 function search(input) {
     const query = input.value.trim();
-    
     window.location.href = "?q=" + encodeURIComponent(query);
-
 }
 </script>
 {% endblock %}

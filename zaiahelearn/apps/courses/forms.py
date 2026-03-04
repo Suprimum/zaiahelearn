@@ -267,5 +267,3 @@ class TeacherApplicationForm(forms.ModelForm):
                 'placeholder': 'Why do you want to teach on ZaiaheLearn?'
             })
         }
-
-

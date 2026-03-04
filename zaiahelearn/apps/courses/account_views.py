@@ -1,3 +1,4 @@
+from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .forms import TeacherApplicationForm, StudentSignupForm, TeacherForm
@@ -6,6 +7,7 @@ from django.contrib import messages
 from allauth.account.views import LoginView, SignupView
 from django.contrib.auth import get_user_model
 from allauth.account.forms import LoginForm
+
 
 
 
@@ -25,6 +27,26 @@ def account_delete(request):
     
 
     return render(request, 'account/account_delete.html')
+
+@login_required
+def admin_remove_teacher(request, teacher_id):
+    if not request.user.is_superuser:
+        messages.error(request, "You do not have permission to perform this action.")
+
+        return HttpResponseForbidden('''
+            <h1>403 Forbidden</h1>
+            <p>You do not have permission to access this page.</p>
+            <a class="btn btn-primary" href="/">Return to Home</a>
+                                     ''')
+
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+        teacher.user.delete()  # This will also delete the Teacher profile due to cascading
+        messages.success(request, f"Teacher {teacher.user.username} has been removed.")
+    except Teacher.DoesNotExist:
+        messages.error(request, "Teacher not found.")
+
+    return redirect('courses:admin_dashboard')
 
 
 class StudentSignupView(SignupView):
@@ -59,11 +81,12 @@ class RoleLoginView(LoginView):
         response = super().form_valid(form)
         # Additional logic can be added here if needed
         user = self.request.user
-        if hasattr(user, 'userprofile') and user.teacher.approved:
-            print(f"User {user.username} has role: {user.userprofile.role}")
+
+        if user.is_superuser:
+            return redirect('courses:admin_dashboard')
+        elif hasattr(user, 'userprofile') and user.teacher.approved:
             return redirect('courses:teacher_dashboard')
         elif hasattr(user, 'userprofile') and user.userprofile.role == 'student':
-            print(f"User {user.username} has role: {user.userprofile.role}")
             return redirect('courses:dashboard')
         elif hasattr(user, 'teacher') and not user.teacher.approved:
             messages.warning(self.request, "Your teacher application is pending approval. Please wait for confirmation.")
@@ -85,58 +108,35 @@ class RoleLoginView(LoginView):
 
 @login_required
 def teacher_application_entry(request):
-    # Already a teacher
-    if request.user.userprofile.role == 'teacher'and request.user.teacher_application.status == 'approved':
-        messages.info(request, "You are already an approved teacher.")
+    # If user is already a teacher, redirect to dashboard
+    if hasattr(request.user, 'teacher') and request.user.teacher.approved:
+        messages.info(request, "You are already a teacher. Redirecting to dashboard.")
         return redirect('courses:teacher_dashboard')
+    
+    # If user has already applied, show application status
+    existing_application = TeacherApplication.objects.filter(user=request.user).first()
+    if existing_application:
+        if existing_application.status == "approved":
+            messages.info(request, "Your teacher application has been approved. Redirecting to dashboard.")
+            return redirect('courses:teacher_dashboard')
+        elif existing_application.status == "pending":
+            messages.info(request, "Your teacher application is pending approval. Please wait for confirmation.")
+            return render(request, "teacher/application_status.html", {"application": existing_application})
+        elif existing_application.status == "rejected":
+            messages.info(request, "Your teacher application was rejected. You may contact support for more information.")
+            return render(request, "teacher/application_status.html", {"application": existing_application})
+    
+    else:
+        # If no existing application, show the application form
+        if request.method == "POST":
+            form = TeacherApplicationForm(request.POST)
+            if form.is_valid():
+                application = form.save(commit=False)
+                application.user = request.user
+                application.save()
+                messages.success(request, "Your teacher application has been submitted and is pending approval.")
+                return redirect('courses:teacher_application')
+        else:
+            form = TeacherApplicationForm()
 
-    # Already applied
-    if TeacherApplication.objects.filter(user=request.user).exists():
-        application = TeacherApplication.objects.get(user=request.user)
-
-        try:
-            request.user.teacher
-            return render(request, 'teacher/application_status.html', {
-                'application': application
-        })
-        except Exception as e:
-            teacher_form = TeacherForm(request.POST or None)
-
-            if request.method == "POST":
-                if teacher_form.is_valid():
-                    teacher = teacher_form.save(commit=False)
-                    teacher.user = request.user
-                    teacher.approved = True
-                    teacher.save()
-
-                    return render(request, 'teacher/application_status.html', {
-                        'application': application
-                    })
-            else:
-            
-                return render(request, 'teacher/application_status.html', {
-                    'application': application,
-                    'form': teacher_form,
-                })
-   
-    # New application
-    form = TeacherApplicationForm(request.POST or None)
-
-    if form.is_valid():
-        app = form.save(commit=False)
-
-        if not hasattr(request.user,'userprofile'):
-            UserProfile.objects.update_or_create(
-            user=request.user,
-            defaults={'role': 'teacher'}
-            )
-        
-        app.user = request.user
-        app.save()
-        messages.success(request, "Application submitted successfully!")
-
-        return redirect('courses:teacher_application')
-
-    return render(request, 'teacher/application_form.html', {
-        'form': form
-    })
+    return render(request, "teacher/application_form.html", {"form": form})

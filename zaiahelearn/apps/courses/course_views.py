@@ -7,7 +7,7 @@ from django.utils import timezone
 from .forms import LessonForm, VideoForm, PDFResourceForm
 from .utils import render_lesson_content, teacher_required, student_required, user_has_access
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 
@@ -18,7 +18,9 @@ from django.http import JsonResponse
 @login_required
 @student_required
 def enroll_courses_page(request):
-    courses = Course.objects.all()
+    courses = Course.objects.annotate(
+        lessons_count=Count('lessons')
+    ).filter(lessons_count__gt=0)
 
     enrolled_course_ids = Enrollment.objects.filter(
         user=request.user
@@ -362,6 +364,21 @@ def lesson_videos_list(request, lesson_id):
     }
     return render(request, "teacher/video_lessons_list.html", context)
 
+@login_required
+@student_required
+def unenroll_course(request, course_id):
+    enrollment = Enrollment.objects.filter(
+        user=request.user,
+        course_id=course_id
+    ).first()
+
+    if enrollment:
+        enrollment.delete()
+        messages.success(request, "You have been unenrolled from the course.")
+    else:
+        messages.warning(request, "You are not enrolled in this course.")
+
+    return redirect('courses:dashboard')
 
 
 @login_required
@@ -387,7 +404,9 @@ def lesson_video_create_edit(request, lesson_id, video_id=None):
         if form.is_valid():
             video_obj = form.save(commit=False)
             video_obj.lesson = lesson
+            video_obj.author = request.user
             video_obj.save()
+            
 
             if video:
                 messages.success(request, "Video updated successfully.")
@@ -419,7 +438,7 @@ def lesson_video_create_edit(request, lesson_id, video_id=None):
 @teacher_required
 def lesson_video_delete(request, lesson_id, video_id):
     lesson = get_object_or_404(Lesson, id=lesson_id, teacher=request.user)
-    video = get_object_or_404(Video, id=video_id, lesson=lesson)
+    video = get_object_or_404(Video, id=video_id, lesson=lesson, author=request.user)
 
     if request.method == "POST":
         video.delete()
@@ -479,7 +498,7 @@ def pdf_create_edit(request, pdf_id=None):
 @login_required
 @teacher_required
 def pdf_list(request):
-    pdfs = PDFResource.objects.all().order_by("-uploaded_at")
+    pdfs = PDFResource.objects.filter(author=request.user).order_by("-uploaded_at")
 
     context = {
         "pdfs": pdfs,

@@ -4,27 +4,11 @@ import markdown
 from .models import Choice, Question, QuestionBank, Purchase
 
 from django.contrib.contenttypes.models import ContentType
+from django.http.response import HttpResponseForbidden
 
 
 
 
-SUBJECTS_PDF_QUESTIONS_LINK = {
-    "MATH_STAT":[
-        "pure-mathematics-with-statistics-1-2024/exams/gce-advanced-level/2024/uppersixth/pure-mathematics-with-statistics/pure-mathematics-with-statistics-1-2024-7mep60ddrb.pdf",
-    ],
-    "MATH_MECH":[
-        "pure-mathematics-with-mechanics-1-2024/exams/gce-advanced-level/2024/uppersixth/pure-mathematics-with-mechanics/pure-mathematics-with-mechanics-1-2024-fdhdtzqu5j.pdf",
-    ],
-    "FMATH":[
-        "exams/gce-advanced-level/2024/uppersixth/further-mathematics/further-mathematics-1-2024-kdhuxlashy.pdf",
-    ],
-    "MATH":[
-
-    ],
-    "AMATH":[
-
-    ],
-}
 
 
 def user_has_access(user, obj):
@@ -42,29 +26,6 @@ def user_has_access(user, obj):
 
 
 
-def generate_quiz_with_ai(amount, subject):
-
-    from urllib.parse import urljoin
-    import requests
-
-
-    BASE_URL = "https://minesec-distance.schoolfaqs.net/paper/"
-    url = SUBJECTS_PDF_QUESTIONS_LINK[subject][0]
-    pdf_url = "https://docs.google.com/viewerng/viewer?url=https://cameroongcerevision.com/wp-content/uploads/2025/06/A-LEVEL-2025-Pure-mathematics-with-mechanics-1.pdf"
-
-    print (pdf_url)
-
-    output_file = url[url.rfind("/")+1:]
-    res = requests.get(pdf_url,stream=True)
-
-    if res.status_code == 200:
-        with open(output_file, "wb") as f:
-            for chunk in res.iter_content(1024):
-                f.write(chunk)
-        print ("PDF downloaded successfully")
-    else:
-        print("Failed to download PDF:", res.status_code)
-   
 
 
 def render_lesson_content(lesson):
@@ -105,22 +66,39 @@ def get_embed_pdf(url):
 
 def student_required(view_func):
     def wrapper(request,*args,**kwargs):
+        if request.user.is_authenticated and request.user.is_superuser:
+            return view_func(request, *args, **kwargs)
+        
         if not request.user.is_authenticated:
             messages.error(request,"You must create an account to access course lessons ")
             return redirect("account_signup")
-        if not hasattr(request.user, 'userprofile') or not request.user.userprofile.role == 'student':
+        if not hasattr(request.user, 'userprofile'):
             messages.error(request,"Student account is required")
             print ("your role:  ",request.user.userprofile.role)
             return redirect("account_signup")
+        
+        if request.user.userprofile.role != 'student':
+            messages.error(request,"Student account required")
+            print ("your role:  ",request.user.userprofile.role)
+            return HttpResponseForbidden('''
+                <h1>403 Forbidden</h1>
+                <p>You do not have permission to access this page. You must have a student account.</p>
+                <a class="btn btn-primary" href="/">Return to Home</a>
+                ''') 
         
         return view_func(request, *args, **kwargs)
     return wrapper
 
 def teacher_required(view_func):
     def wrapper(request, *args, **kwargs):
+
+        if request.user.is_authenticated and request.user.is_superuser:
+            return view_func(request, *args, **kwargs)
+        
         if not hasattr(request.user, 'userprofile') or not request.user.userprofile.role == 'teacher':
             messages.error(request, "Teacher access required.")
             return redirect('courses:dashboard')
+        
         if not request.user.teacher.approved:
             messages.warning(request, "Your teacher account is awaiting approval.")
             return redirect('courses:teacher_application')

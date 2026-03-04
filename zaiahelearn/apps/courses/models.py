@@ -52,6 +52,7 @@ class Course(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES)
+    image = models.URLField(blank=True, null=True,default="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=2073&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
     description = models.TextField()
 
 
@@ -493,8 +494,9 @@ class Enrollment(models.Model):
 
 class Teacher(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE,related_name='teacher')
-    bio = models.TextField(blank=True)
+    bio = models.TextField(blank=True,default="No bio yet.")
     approved = models.BooleanField(default=False)
+    subjects = models.CharField(max_length=255, blank=True,null=True)
 
     def __str__(self):
         return self.user.get_full_name() or self.user.username
@@ -508,7 +510,7 @@ class TeacherApplication(models.Model):
         ('rejected', 'Rejected'),
     ]
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE,related_name='teacher_application')
+    user = models.OneToOneField(User, on_delete=models.CASCADE,related_name='teacher_application',null=True,blank=True)
     full_name = models.CharField(max_length=200)
     subject = models.CharField(max_length=100)
     experience_years = models.PositiveIntegerField()
@@ -535,6 +537,8 @@ class Video(models.Model):
 
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
+
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
     video_url = EmbedVideoField(verbose_name="Video URL", null=True)
 

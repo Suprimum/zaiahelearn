@@ -1,5 +1,5 @@
 from django import template
-from zaiahelearn.apps.courses.models import Question, Lesson
+from zaiahelearn.apps.courses.models import LessonProgress, Question, Lesson
 
 register = template.Library()
 
@@ -61,3 +61,13 @@ def pending(queryset):
 @register.filter
 def isteacher(user,teacher):
     return True if user == teacher else False
+
+
+@register.filter
+def course_progress(lessons,user):
+    total_lessons = lessons.count()
+    if total_lessons == 0:
+        return 0
+    completed_lessons = LessonProgress.objects.filter(lesson__in=lessons, user=user, completed=True).count()
+    progress = (completed_lessons / total_lessons) * 100
+    return int(progress)

@@ -8,7 +8,11 @@ from .models import Teacher
 @receiver(post_save, sender=User)
 def create_teacher_profile(sender, instance, created, **kwargs):
     if created:
-        Teacher.objects.create(user=instance)
+        if instance.is_superuser:
+            return  # Skip creating Teacher profile for superusers
+        elif hasattr(instance, 'userprofile') and instance.userprofile.role == 'teacher':
+            Teacher.objects.create(user=instance)
+            print(f"SIGNAL: Created Teacher profile for user: {instance.username}")
 
 '''
 @receiver(post_save, sender=User)

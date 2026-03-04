@@ -57,5 +57,7 @@ urlpatterns = [
     path("classroom/<int:classroom_id>/approve/student/<int:member_id>/",views.approve_student,name='approve_student'),
     path("join/classroom/<int:classroom_id>/",views.join_classroom,name='join_classroom'),
     path("join/classroom/<int:classroom_id>/request/list/",views.join_classroom_request_list,name='join_classroom_request_list'),
-    #path("quiz/<int:quiz_id>/builder/", views.quiz_builder, name="quiz_builder"),
+    path("admin/dashboard/",views.admin_dashboard,name="admin_dashboard"),
+    path("admin/teacher/<int:teacher_id>/remove/",views.admin_remove_teacher,name="admin_remove_teacher"),
+    path("course/<int:course_id>/unenroll/",views.unenroll_course,name="unenroll_course"),
 ]   
