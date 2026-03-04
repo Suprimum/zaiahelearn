@@ -3,16 +3,14 @@
 
 
 
-
-
 {% block hero-section %}
     <section class="hero-section text-white text-center">
         <div class="container">
             <h1 class="display-4 fw-bold">
-                📝 Lesson Quizzes
+                📝 {{course.title}} Quizzes
             </h1>
             <p class="lead mt-3">
-                Manage and view all your created lesson quizes
+                Manage and view all your created course quizes
             </p>
         </div>
     </section>
@@ -58,13 +56,13 @@
   <!-- Header -->
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
     <div>
-      <h3 class="fw-bold mb-1">📝 Lesson Quizzes</h3>
+      <h3 class="fw-bold mb-1">📝 Course Quizzes</h3>
       <p class="text-muted mb-0">
-        {{ lesson.title }}
+        {{ Course.title }}
       </p>
     </div>
 
-    <a href="{% url 'courses:lesson_quiz_create' lesson.id %}"
+    <a href="{% url 'courses:course_quiz_create' course.id %}"
        class="btn btn-primary mt-2 mt-md-0">
       ➕ Create Quiz
     </a>
@@ -81,7 +79,7 @@
 
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <h5 class="fw-semibold mb-0">
-                  {{ quiz.title }}
+                  {{ quiz.title }} ({{ quiz.level }})
                 </h5>
 
                 {% if quiz.is_published %}
@@ -93,7 +91,7 @@
 
               <p class="text-muted small mb-2">
                 {{ quiz.questions.count }} question{{ quiz.questions.count|pluralize }}
-                <span style="margin-left: 45%;">Time Limit: {{quiz.time_limit}}</span>
+                <span style="margin-left: 25%;">Time Limit: {{quiz.time_limit}} Mins</span>
               </p>
 
               <p class="text-muted small mb-3">
@@ -101,7 +99,7 @@
               </p>
 
               <div class="mt-auto d-grid gap-2">
-                <a href="{% url 'courses:lesson_quiz_edit' lesson.id quiz.id %}"
+                <a href="{% url 'courses:course_quiz_edit' course.id quiz.id %}"
                    class="btn btn-outline-primary btn-sm">
                   ✏️ Edit
                 </a>
@@ -127,7 +125,7 @@
   {% else %}
     <div class="alert alert-info">
       No quizzes yet for this lesson.
-      <a href="{% url 'courses:lesson_quiz_create' lesson.id %}" class="alert-link">
+      <a href="{% url 'courses:course_quiz_create' course.id %}" class="alert-link">
         Create your first quiz
       </a>.
     </div>

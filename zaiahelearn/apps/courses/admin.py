@@ -26,7 +26,7 @@ class CourseAdmin(admin.ModelAdmin):
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "course", "status", "author", "created_at", "views")
+    list_display = ("id", "title", "course", "status", "author", "created_at", "views", "content_blocks")
     search_fields = ("title", "course__title")
 
 @admin.register(TeacherApplication)
@@ -66,7 +66,15 @@ class ChoiceAdmin(admin.ModelAdmin):
 
 @admin.register(QuestionBank)
 class QuestionBankAdmin(admin.ModelAdmin):
-    list_display = ['lesson','difficulty']
+    list_display = ['lesson_course','difficulty']
+
+    def lesson_course(self, obj):
+        if obj.lesson:
+            return f"Lesson: {obj.lesson.title}"
+        elif obj.course:
+            return f"Course: {obj.course.title}"
+        else:
+            return "N/A"
 
 @admin.register(LessonQuizAttempt)
 class LessonQuizAttemptAdmin(admin.ModelAdmin):

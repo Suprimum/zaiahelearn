@@ -1,11 +1,30 @@
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.contrib import messages
 import markdown
-from .models import Choice, Question, QuestionBank, Quiz, AIQuiz, Purchase
+from .models import Choice, Question, QuestionBank, Purchase
 
-from zaiahelearn.ai.main import ai_generate_questions
 from django.contrib.contenttypes.models import ContentType
 
+
+
+
+SUBJECTS_PDF_QUESTIONS_LINK = {
+    "MATH_STAT":[
+        "pure-mathematics-with-statistics-1-2024/exams/gce-advanced-level/2024/uppersixth/pure-mathematics-with-statistics/pure-mathematics-with-statistics-1-2024-7mep60ddrb.pdf",
+    ],
+    "MATH_MECH":[
+        "pure-mathematics-with-mechanics-1-2024/exams/gce-advanced-level/2024/uppersixth/pure-mathematics-with-mechanics/pure-mathematics-with-mechanics-1-2024-fdhdtzqu5j.pdf",
+    ],
+    "FMATH":[
+        "exams/gce-advanced-level/2024/uppersixth/further-mathematics/further-mathematics-1-2024-kdhuxlashy.pdf",
+    ],
+    "MATH":[
+
+    ],
+    "AMATH":[
+
+    ],
+}
 
 
 def user_has_access(user, obj):
@@ -23,42 +42,29 @@ def user_has_access(user, obj):
 
 
 
-def generate_quiz_with_ai(payment, user):
+def generate_quiz_with_ai(amount, subject):
 
-    lesson = payment.lesson
+    from urllib.parse import urljoin
+    import requests
 
-    # call OpenAI or your LLM
-    questions = ai_generate_questions(lesson.content)
 
-    quiz = Quiz.objects.create(
-        lesson=lesson,
-        title=f"AI Quiz - {lesson.title}",
-        is_ai_generated=True
-    )
+    BASE_URL = "https://minesec-distance.schoolfaqs.net/paper/"
+    url = SUBJECTS_PDF_QUESTIONS_LINK[subject][0]
+    pdf_url = "https://docs.google.com/viewerng/viewer?url=https://cameroongcerevision.com/wp-content/uploads/2025/06/A-LEVEL-2025-Pure-mathematics-with-mechanics-1.pdf"
 
-    for q in questions:
-        question = Question.objects.create(
-            quiz=quiz,
-            text=q["question"]
-        )
+    print (pdf_url)
 
-        for choice in q["choices"]:
-            Choice.objects.create(
-                question=question,
-                text=choice["text"],
-                is_correct=choice["correct"]
-            )
+    output_file = url[url.rfind("/")+1:]
+    res = requests.get(pdf_url,stream=True)
 
-    AIQuiz.objects.create(
-        lesson=lesson,
-        user=user,
-        source_payment=payment
-    )
-
-    return quiz
-
+    if res.status_code == 200:
+        with open(output_file, "wb") as f:
+            for chunk in res.iter_content(1024):
+                f.write(chunk)
+        print ("PDF downloaded successfully")
+    else:
+        print("Failed to download PDF:", res.status_code)
    
-
 
 
 def render_lesson_content(lesson):
@@ -122,8 +128,19 @@ def teacher_required(view_func):
     return wrapper
 
 
-def save_question(user,lesson,question_contents,quiz,option_A,option_B,option_C,option_D,correct_choices,difficulties):
-    for index, content in enumerate(question_contents):
+def save_question(data,user,quiz,lesson=None,course=None,is_ai_generated=False):
+
+    
+    question_contents_html = data.getlist("question_content_html[]")
+    correct_choices = data.getlist("correct_choice[]")
+    difficulties = data.getlist("difficulty[]")
+
+    option_A = data.getlist("option_A[]")
+    option_B = data.getlist("option_B[]")
+    option_C = data.getlist("option_C[]")
+    option_D = data.getlist("option_D[]")
+    
+    for index, content in enumerate(question_contents_html):
 
         if not content.strip():
             continue  # Skip empty questions
@@ -134,12 +151,14 @@ def save_question(user,lesson,question_contents,quiz,option_A,option_B,option_C,
                 correct_choice=correct_choices[index],
                 order=index,
                 difficulty = difficulties[index],
+                is_ai_generated = is_ai_generated,
         )
         question.save()
 
         question_bank = QuestionBank.objects.create(
             teacher = user,
             lesson = lesson,
+            course = course,
             question = question,
             difficulty = difficulties[index],
         )
@@ -169,6 +188,7 @@ def save_question(user,lesson,question_contents,quiz,option_A,option_B,option_C,
                 answer=option_D[index],
                 is_correct = True if correct_choices[index] == "D" else False
         ).save()
+
 
 
 

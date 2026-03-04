@@ -32,7 +32,7 @@
 
 {% block content %}
 <div class="container py-4 px-lg-5">
-
+  <h3 class="text-muted mb-3">{% if quiz.lesson %}Lesson: {{quiz.lesson.title}}{% else %} Course: {{quiz.course.title}}{% endif %}</h3>
 <!-- ================= FILTER FORM ================= -->
 <form method="get" class="card shadow-sm mb-4">
   <div class="card-body row g-3 align-items-end">
@@ -53,6 +53,15 @@
              value="{{ request.GET.topic }}"
              class="form-control"
              placeholder="Search topic...">
+    </div>
+
+    <div class="col-md-3">
+      <label class="fw-bold small">Level</label>
+      <select class="form-select" name="level">
+        <option value="">O-Level</option>
+        <option value="O-Level" {% if request.GET.level == "easy" %}selected{% endif %}>O-Level</option>
+        <option value="A-Level" {% if request.GET.level == "medium" %}selected{% endif %}>A-Level</option>
+      </select>
     </div>
 
     <div class="col-md-2">
@@ -86,7 +95,8 @@
         <label class="form-check-label fw-bold">Select Question</label>
       </div>
 
-      <!-- Difficulty -->
+      <div class="d-flex justify-content-between">
+        <!-- Difficulty -->
       <div class="mb-2">
         <span class="badge
           {% if q.difficulty == 'easy' %}bg-success
@@ -94,6 +104,13 @@
           {% else %}bg-danger{% endif %}">
           {{ q.difficulty|title }}
         </span>
+      </div>
+      <!-- Difficulty -->
+      <div class="mb-2">
+        <span class="text-muted">
+          {{ q.level }}
+        </span>
+      </div>
       </div>
 
       <!-- Preview text -->
@@ -194,7 +211,7 @@
 <!-- ================= ACTION BAR ================= -->
 <div class="sticky-bottom bg-white border-top py-3 d-flex justify-content-between mt-4">
 
-<a href="{% url 'courses:quiz_edit' quiz.lesson.id quiz.id %}"
+<a href="{% if quiz.lesson %}{% url 'courses:lesson_quiz_edit' quiz.lesson.id quiz.id %}{% else %}{% url 'courses:course_quiz_edit' quiz.course.id quiz.id %}{% endif %}"
    class="btn btn-outline-secondary">
    ← Back to Quiz
 </a>

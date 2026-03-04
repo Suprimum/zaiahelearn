@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+
+
+
+
+
+
+
+
+
+{% block hero-section %}
+    <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">
+                {% if quiz %} ✏️ Edit Quiz {% else %} ➕ Create Quiz {% endif %}
+            </h1>
+            <p class="lead mt-3">
+                {% if quiz %}
+                    Update the questions and settings for your quiz.
+                {% else %}
+                    Start by filling out the details for your new quiz.
+                {% endif %}
+            </p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link text-danger" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div> 
+        </div>
+    </nav>
+{% endblock %}
+
+
+{% block content %}
+
+<form method="post" id="quizForm">
+{% csrf_token %}
+
+<div class="card p-3 mb-4 shadow-sm">
+
+    <h5 class="fw-bold mb-3">Questions</h5>
+
+    <div id="questionContainer">
+      {% for question in questions %}
+        {% include "courses/partials/question_form.html" with question=question uid=question.id|default:forloop.counter|default:"new" %}
+      {% empty %}
+        {% include "courses/partials/question_form.html" %}
+      {% endfor %}
+    </div>
+
+    <button type="button" class="btn btn-outline-primary mt-3" onclick="addQuestion()">
+      ➕ Add Question
+    </button>
+
+</div>
+
+<div class="mt-3">
+    <button class="btn btn-success shadow-sm px-5">Save</button>
+    <a href="{% url 'courses:teacher_dashboard' %}" class="btn btn-danger shadow-sm px-5">Cancel</a>
+</div>
+
+</form>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script>
+
+<script>
+
+let editors = new Map();
+
+/* ===============================
+   Initialize CKEditor safely
+================================*/
+function initializeEditors(scope=document) {
+
+  scope.querySelectorAll(".rich-editor").forEach(textarea => {
+
+    if (editors.has(textarea)) return;
+
+    ClassicEditor.create(textarea, {
+      toolbar: [
+        'heading','|',
+        'bold','italic','link',
+        'bulletedList','numberedList',
+        'blockQuote','codeBlock',
+        '|','undo','redo'
+      ]
+    })
+    .then(editor => {
+
+      editors.set(textarea, editor);
+
+      editor.model.document.on('change:data', () => {
+        updatePreview(textarea.closest(".question-item"));
+      });
+
+    })
+    .catch(error => console.error("CKEditor error:", error));
+
+  });
+}
+
+
+/* ===============================
+   Live Preview Renderer
+================================*/
+function updatePreview(container) {
+
+  if (!container) return;
+
+  const previewBox = container.querySelector(".preview-box");
+  const textarea = container.querySelector(".rich-editor");
+
+  if (!previewBox || !textarea) return;
+
+  let html = "";
+
+  if (editors.has(textarea)) {
+    html = editors.get(textarea).getData();
+  }
+
+  previewBox.innerHTML = html || "<p class='text-muted'>Nothing to preview...</p>";
+
+  if (window.MathJax) {
+    MathJax.typesetClear([previewBox]);
+    MathJax.typesetPromise([previewBox]);
+  }
+}
+
+
+/* ===============================
+   Add New Question (AJAX)
+================================*/
+function addQuestion() {
+
+  fetch("{% url 'courses:question_empty_partial' %}")
+    .then(response => response.text())
+    .then(html => {
+
+      const container = document.getElementById("questionContainer");
+      container.insertAdjacentHTML("beforeend", html);
+
+      const newQuestion = container.lastElementChild;
+      initializeEditors(newQuestion);
+
+    })
+    .catch(err => console.error("Error loading question:", err));
+}
+
+
+/* ===============================
+   Before form submit sync editors
+================================*/
+document.getElementById("quizForm")
+  .addEventListener("submit", function() {
+
+    editors.forEach(editor => {
+      editor.updateSourceElement();
+    });
+
+});
+
+
+/* ===============================
+   Init on page load
+================================*/
+document.addEventListener("DOMContentLoaded", function() {
+  initializeEditors();
+});
+
+</script>
+
+
+{% endblock %}

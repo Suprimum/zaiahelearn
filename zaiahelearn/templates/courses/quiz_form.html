@@ -111,13 +111,20 @@
   <!-- HEADER -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="fw-bold">
-      {% if quiz %} ✏️ Edit Quiz {% else %} ➕ Create Quiz {% endif %} for {{lesson}}
+      {% if quiz %} ✏️ Edit Quiz {% else %} ➕ Create Quiz {% endif %} for {% if lesson %} Lesson: "{{ lesson.title }}" {% else %} Course: "{{ course.title }}" {% endif %}
     </h3>
 
-    <a href="{% url 'courses:lesson_quiz_list' lesson.id %}"
-       class="btn btn-outline-secondary btn-sm">
-      ← Back to Quizzes
-    </a>
+    {% if lesson %}
+      <a href="{% url 'courses:lesson_quiz_list' lesson.id %}"
+        class="btn btn-outline-secondary btn-sm">
+        ← Back to Lesson Quizzes
+      </a>
+    {% elif course %}
+      <a href="{% url 'courses:course_quiz_list' course.slug course.id %}"
+        class="btn btn-outline-secondary btn-sm">
+        ← Back to Course Quizzes
+      </a>
+      {% endif %}
   </div>
 
   <form method="post" id="quizForm">
@@ -232,13 +239,43 @@
               {{ form.pass_score }}
             </div>
 
-            <div class="form-check mb-3">
+            <div class="d-flex">
+              <div class="form-check mb-3">
               {{ form.is_published }}
               <label class="form-check-label">
                 Publish Quiz
               </label>
             </div>
 
+            <div class="form-check mb-3">
+              {{ form.is_course_quiz }}
+              <label class="form-check-label">
+                Course wide
+              </label>
+            </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="fw-bold">Number of Attempts </label>
+              {{ form.attempts }}
+            </div>
+
+            <div class="mb-3">
+              <label class="fw-bold">Level </label>
+              <select name="level" class="form-select">
+                  {% if quiz.level  == "O-Level" %}
+                    <option value="O-Level" selected>O-Level</option>
+                  {% else %}
+                    <option value="O-Level">O-Level</option>
+                  {% endif %}
+                  {% if quiz.level  == "A-Level" %}
+                    <option value="A-Level" selected>A-Level</option>
+                  {% else %}
+                    <option value="A-Level">A-Level</option>
+                  {% endif %}
+              </select>
+            </div>
+<hr>
             <button class="btn btn-primary w-100 mb-2">
               💾 Save Quiz
             </button>
@@ -258,7 +295,7 @@
             </a>
             {%endif%}
 
-            {% if has_paid %}
+            {% if has_paid and request.user.is_superuser %}
               <a href="{% url 'courses:generate_ai_quiz' lesson.id %}" class="btn btn-success w-100 mb-2 mt-2">
                       🤖 Generate AI Quiz
               </a>
@@ -275,7 +312,7 @@
             {% endif %}            
 
 
-            <a href="{% url 'courses:lesson_quiz_list' lesson.id %}" class="btn btn-secondary w-100 mb-2">
+            <a href=" {% if lesson %}{% url 'courses:lesson_quiz_list' lesson.id %}{% else %}{% url 'courses:course_quiz_list' course.slug course.id %} {% endif %}" class="btn btn-secondary w-100 mb-2">
               Cancel
             </a>
           </div>

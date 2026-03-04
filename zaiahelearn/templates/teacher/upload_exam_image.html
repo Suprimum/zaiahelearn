@@ -1,0 +1,156 @@
+{% extends "courses/quiz_form.html" %}
+
+{% block hero-section %}
+<section class="hero-section text-white text-center">
+    <div class="container">
+        <h1 class="display-5 fw-bold">🤖 Create AI Quiz</h1>
+        <p class="lead mt-2">
+            Upload a scanned exam or screenshot. AI will extract questions automatically.
+        </p>
+    </div>
+</section>
+{% endblock %}
+
+
+{% block content %}
+<div class="container py-4" style="max-width:720px;">
+
+    <div class="card shadow-lg border-0">
+
+        <div class="card-body p-4">
+
+            <h5 class="fw-bold mb-3">AI Exam Scanner</h5>
+            <p class="text-muted small mb-4">
+                Supported formats: JPG, PNG, WEBP. Clear scans give the best results.
+            </p>
+
+            <form method="POST" enctype="multipart/form-data" id="aiScanForm">
+                {% csrf_token %}
+
+                <!-- Upload Box -->
+                <div class="border rounded p-4 text-center bg-light mb-3"
+                     id="uploadBox"
+                     style="cursor:pointer">
+
+                    <input type="file"
+                           name="image"
+                           id="imageInput"
+                           class="form-control d-none"
+                           accept="image/png,image/jpeg,image/webp"
+                           required>
+
+                    <div id="uploadText">
+                        <div class="fs-2">📄</div>
+                        <div class="fw-semibold mt-2">
+                            Click to upload exam image
+                        </div>
+                        <div class="text-muted small">
+                            or drag & drop file here
+                        </div>
+                    </div>
+
+                    <div id="fileName" class="small text-success mt-2"></div>
+                </div>
+
+                <!-- Validation message -->
+                <div id="fileError" class="text-danger small mb-3"></div>
+
+                <!-- Submit -->
+                <button id="submitBtn" class="btn btn-success w-100 py-2 fw-semibold">
+                    Scan Paper with AI
+                </button>
+
+                <!-- Loader -->
+                <div id="loadingBox" class="text-center mt-3 d-none">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <div class="small mt-2 text-muted">
+                        Processing image with AI… please wait.
+                    </div>
+                </div>
+
+                <small class="text-muted mt-3 d-block text-center">
+                    AI will detect subject, formulas, diagrams, and correct answers automatically.
+                </small>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    const uploadBox = document.getElementById("uploadBox")
+    const fileInput = document.getElementById("imageInput")
+    const fileName = document.getElementById("fileName")
+    const errorBox = document.getElementById("fileError")
+    const form = document.getElementById("aiScanForm")
+    const submitBtn = document.getElementById("submitBtn")
+    const loadingBox = document.getElementById("loadingBox")
+
+    /* Click upload */
+    uploadBox.addEventListener("click", ()=> fileInput.click())
+
+    /* Drag & Drop */
+    uploadBox.addEventListener("dragover", e=>{
+        e.preventDefault()
+        uploadBox.classList.add("border-success")
+    })
+
+    uploadBox.addEventListener("dragleave", ()=>{
+        uploadBox.classList.remove("border-success")
+    })
+
+    uploadBox.addEventListener("drop", e=>{
+        e.preventDefault()
+        uploadBox.classList.remove("border-success")
+        fileInput.files = e.dataTransfer.files
+        validateFile()
+    })
+
+    /* File validation */
+    fileInput.addEventListener("change", validateFile)
+
+    function validateFile(){
+        errorBox.textContent = ""
+        fileName.textContent = ""
+
+        const file = fileInput.files[0]
+        if(!file) return
+
+        const validTypes = ["image/png","image/jpeg","image/webp"]
+
+        if(!validTypes.includes(file.type)){
+            errorBox.textContent = "Only PNG, JPG or WEBP images allowed."
+            fileInput.value = ""
+            return
+        }
+
+        fileName.textContent = "Selected: " + file.name
+    }
+
+    /* Submit handler */
+    form.addEventListener("submit", function(e){
+
+        const file = fileInput.files[0]
+        if(!file){
+            e.preventDefault()
+            errorBox.textContent = "Please upload an image file."
+            return
+        }
+
+        submitBtn.disabled = true
+        submitBtn.textContent = "Uploading..."
+        loadingBox.classList.remove("d-none")
+    })
+
+})
+</script>
+{% endblock %}

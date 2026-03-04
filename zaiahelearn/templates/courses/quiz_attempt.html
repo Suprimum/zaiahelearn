@@ -23,11 +23,82 @@
 </nav>
 {% endblock %}
 
+
+
+{% block extra_css %}
+<style>
+
+/* ===============================
+   CLEAN MATHJAX (NO SCROLLBARS)
+================================ */
+
+.math-content {
+    overflow: visible !important;
+}
+
+mjx-container {
+    max-width: 100%;
+    overflow: visible !important;
+}
+
+mjx-container[jax="SVG"] {
+    overflow: visible !important;
+}
+
+/* Inline math alignment */
+mjx-container[display="inline"] {
+    display: inline !important;
+    vertical-align: middle;
+}
+
+/* Display math spacing */
+mjx-container[display="true"] {
+    display: block;
+    text-align: center;
+    margin: 1.2rem 0;
+}
+
+/* Improve readability */
+.math-content p {
+    margin-bottom: .8rem;
+}
+
+/* ===============================
+   FLOATING TIMER
+================================ */
+
+#floatingTimer {
+    position: fixed;
+    top: 90px;
+    right: 20px;
+    z-index: 1050;
+    font-size: 1.1rem;
+    font-weight: bold;
+    padding: 10px 16px;
+    border-radius: 50px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+
+@media (max-width: 768px){
+    #floatingTimer {
+        right: 10px;
+        top: 80px;
+        font-size: .9rem;
+    }
+}
+
+.option-hover:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container my-4">
 
   <!-- HEADER -->
-  <div class="card shadow-sm mb-4">
+  <div class="card shadow-sm mb-4" >
     <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
 
         <div>
@@ -35,7 +106,7 @@
             <small class="text-muted">Pass mark: {{ quiz.pass_score }}%</small>
         </div>
 
-        <div class="badge bg-warning text-dark fs-6 px-3 py-2">
+        <div id="floatingTimer" class="bg-warning text-dark">
             ⏱ <span id="timer"></span>
         </div>
 
@@ -47,30 +118,40 @@
     {% csrf_token %}
 
     {% for q in questions %}
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
+        <div class="card shadow-sm mb-4 question-card">
+    <div class="card-body">
 
-            <h6 class="fw-bold mb-3">Question {{ forloop.counter }}</h6>
-
-            <div class="mb-3 math-content">
-                {{ q.content_html|safe }}
-            </div>
-
-            {% for c in q.choices.all %}
-            <div class="form-check mb-2">
-                <input class="form-check-input"
-                       type="radio"
-                       name="{{ q.id }}"
-                       value="{{ c.choice }}"
-                       id="q{{ q.id }}{{ c.choice }}">
-                <label class="form-check-label" for="q{{ q.id }}{{ c.choice }}">
-                    <strong>{{ c.choice }}.</strong> {{ c.answer }}
-                </label>
-            </div>
-            {% endfor %}
-
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold mb-0">
+                Question {{ forloop.counter }}
+            </h6>
+            <span class="badge bg-secondary">
+                {{ q.choices.count }} options
+            </span>
         </div>
+
+        <div class="mb-3 math-content fs-6">
+            {{ q.content_html|safe }}
+        </div>
+
+        {% for c in q.choices.all %}
+        <div class="form-check mb-2 p-2 rounded option-hover">
+            <input class="form-check-input"
+                   type="radio"
+                   name="{{ q.id }}"
+                   value="{{ c.choice }}"
+                   id="q{{ q.id }}{{ c.choice }}">
+
+            <label class="form-check-label w-100"
+                   for="q{{ q.id }}{{ c.choice }}">
+                <strong>{{ c.choice }}.</strong>
+                {{ c.answer }}
+            </label>
+        </div>
+        {% endfor %}
+
     </div>
+</div>
     {% endfor %}
 
     <button class="btn btn-primary btn-lg w-100 shadow">
@@ -128,44 +209,117 @@
 
 {% block extra_js %}
 
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<!-- ===============================
+     ADVANCED MATHJAX CONFIG
+================================ -->
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [
+      ['$', '$'],
+      ['\\(', '\\)']
+    ],
+    displayMath: [
+      ['$$', '$$'],
+      ['\\[', '\\]']
+    ],
+    processEscapes: true,
+    processEnvironments: true,
+    tags: "ams",              // enables equation numbering
+    packages: {'[+]': ['ams', 'noerrors', 'noundefined']}
+  },
+
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+  },
+
+  svg: {
+    fontCache: 'global',
+    scale: 1,
+    minScale: .5
+  },
+
+  startup: {
+    typeset: true
+  }
+};
+</script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+
 
 <script>
+
 const quizForm = document.getElementById("quizForm");
-const securityModal = new bootstrap.Modal(document.getElementById("securityModal"));
 const startModal = new bootstrap.Modal(document.getElementById("startModal"));
+const securityModal = new bootstrap.Modal(document.getElementById("securityModal"));
 
 let quizStarted = false;
+let quizEnded = false;
+let timerInterval = null;
 
-/* ---------- START MODAL ---------- */
-window.onload = () => startModal.show();
+/* =========================
+   START
+========================= */
+window.onload = () => {
+    startModal.show();
+};
 
 document.getElementById("startQuizBtn").onclick = () => {
     quizStarted = true;
     startModal.hide();
-    enterFullscreen();
+    lockFullscreen();
     startTimer();
 };
 
-/* ---------- TIMER ---------- */
+/* =========================
+   TIMER
+========================= */
 let totalSeconds = parseInt(`{{ quiz.time_limit|default:10 }}`) * 60;
 const timerElement = document.getElementById("timer");
 
 function startTimer(){
     updateTimer();
-    setInterval(updateTimer,1000);
+    timerInterval = setInterval(updateTimer,1000);
 }
 
 function updateTimer(){
+    if(quizEnded) return;
+
     let m = Math.floor(totalSeconds/60);
     let s = totalSeconds%60;
+
     timerElement.textContent = `${m}:${s<10?'0':''}${s}`;
-    if(totalSeconds<=0){ endQuiz("Time expired"); }
+
+    if(totalSeconds <= 0){
+        strictSubmit("Time expired");
+    }
+
     totalSeconds--;
 }
 
-/* ---------- FULLSCREEN ---------- */
-function enterFullscreen(){
+/* =========================
+   STRICT SUBMIT
+========================= */
+function strictSubmit(reason){
+    if(quizEnded) return;
+
+    quizEnded = true;
+    clearInterval(timerInterval);
+
+    document.getElementById("securityMessage").innerText = reason;
+    securityModal.show();
+
+    setTimeout(()=>{
+        quizForm.submit();
+    },1500);
+}
+
+/* =========================
+   FULLSCREEN LOCK
+========================= */
+function lockFullscreen(){
     if(document.documentElement.requestFullscreen){
         document.documentElement.requestFullscreen();
     }
@@ -173,51 +327,74 @@ function enterFullscreen(){
 
 document.addEventListener("fullscreenchange", ()=>{
     if(quizStarted && !document.fullscreenElement){
-        endQuiz("Fullscreen exited");
+        strictSubmit("Fullscreen exited");
     }
 });
 
-/* ---------- SECURITY TRIGGERS ---------- */
+/* =========================
+   TAB / MINIMIZE / BLUR
+========================= */
 document.addEventListener("visibilitychange", ()=>{
     if(quizStarted && document.hidden){
-        endQuiz("Tab switched");
+        strictSubmit("Tab switched or minimized");
     }
 });
 
 window.addEventListener("blur", ()=>{
     if(quizStarted){
-        endQuiz("Window lost focus");
+        strictSubmit("Window lost focus");
     }
 });
 
-/* ---------- DISABLE COPY ---------- */
-document.addEventListener("copy",e=>e.preventDefault());
-document.addEventListener("paste",e=>e.preventDefault());
-document.addEventListener("cut",e=>e.preventDefault());
-document.addEventListener("contextmenu",e=>e.preventDefault());
-
-/* ---------- END QUIZ ---------- */
-function endQuiz(reason){
-    document.getElementById("securityMessage").innerText = reason;
-    securityModal.show();
-}
-
-/* ---------- CONFIRM SUBMIT ---------- */
-quizForm.addEventListener("submit", e=>{
-    if(!confirm("Submit quiz now?")){
+/* =========================
+   REFRESH / CLOSE
+========================= */
+window.addEventListener("beforeunload", function (e) {
+    if (quizStarted && !quizEnded) {
+        strictSubmit("Page refresh or close detected");
         e.preventDefault();
+        e.returnValue = '';
     }
 });
+
+/* =========================
+   DISABLE CHEATS
+========================= */
+["copy","paste","cut","contextmenu"].forEach(evt=>{
+    document.addEventListener(evt,e=>e.preventDefault());
+});
+
+/* Disable DevTools + Refresh */
+document.addEventListener("keydown", function(e){
+    if(
+        e.key === "F5" ||
+        (e.ctrlKey && e.key === "r") ||
+        (e.ctrlKey && e.shiftKey && e.key === "I") ||
+        (e.ctrlKey && e.shiftKey && e.key === "J") ||
+        (e.ctrlKey && e.key === "u")
+    ){
+        e.preventDefault();
+        strictSubmit("Unauthorized keyboard action");
+    }
+});
+
+/* Prevent Back Navigation */
+history.pushState(null,null,location.href);
+window.onpopstate = function(){
+    history.go(1);
+    strictSubmit("Back navigation blocked");
+};
+
+/* =========================
+   CONFIRM NORMAL SUBMIT
+========================= */
+quizForm.addEventListener("submit", function(e){
+    if(!quizEnded){
+        if(!confirm("Submit quiz now?")){
+            e.preventDefault();
+        }
+    }
+});
+
 </script>
-
-
-<style>
-.math-content mjx-container,
-.math-content .MathJax {
-    overflow: visible !important;
-    max-width:100% !important;
-}
-body { overflow-x:hidden; }
-</style>
-
 {% endblock %}

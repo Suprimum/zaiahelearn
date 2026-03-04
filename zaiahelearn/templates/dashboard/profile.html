@@ -1,216 +1,239 @@
 {% extends "base.html" %}
 {% load dict_extra %}
 
-
-
-
 {% block hero-section %}
-    <section class="hero-section text-white text-center">
-        <div class="container">
-            <h1 class="display-4 fw-bold">Your Dashboard</h1>
-            <p class="lead mt-3">Manage your learning progress and explore new courses.</p>
-        </div>
-    </section>
-    
+<section class="bg-gradient bg-dark text-white text-center py-5">
+    <div class="container">
+        <h1 class="display-5 fw-bold">⭐ Student Dashboard</h1>
+        <p class="lead opacity-75">Track your learning, join classrooms, and continue your courses.</p>
+    </div>
+</section>
 {% endblock %}
 
+
 {% block navbar %}
-<nav class="navbar navbar-dark bg-dark sticky-top course-navbar shadow-sm" style="margin-top: -7.1vh;">
-  <div class="container-fluid">
+<nav class="navbar navbar-dark bg-black sticky-top shadow-sm" style="margin-top:-7.1vh;">
+    <div class="container-fluid px-4">
+        <button class="btn btn-outline-light d-lg-none me-3"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#lessonSidebar">☰</button>
 
-    <button class="btn btn-outline-light d-lg-none me-2"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#lessonSidebar">☰</button>
+        <span class="navbar-brand fw-bold">Zaiah E-Learn</span>
 
-    <span class="navbar-brand fw-bold">Zaiah E-Learn</span>
-
-    <div class="ms-auto">
-        <a class="btn btn-sm btn-outline-light" href="{% url 'home' %}">Home</a>
-        <a class="btn btn-sm btn-outline-light" href="{% url 'courses:enroll_courses' %}">Courses</a>
-        <a class="btn btn-sm btn-danger" href="{% url 'account_logout' %}">Logout</a>
+        <div class="ms-auto d-flex gap-2">
+            <a class="btn btn-sm btn-outline-light" href="{% url 'home' %}">Home</a>
+            <a class="btn btn-sm btn-outline-light" href="{% url 'courses:enroll_courses' %}">Courses</a>
+            <a class="btn btn-sm btn-danger" href="{% url 'account_logout' %}">Logout</a>
+        </div>
     </div>
-  </div>
 </nav>
 {% endblock %}
 
 
 {% block content %}
+<div class="container-fluid px-4 py-5">
 
-<div class="container">
-    {% for message in messages %}
-    <!-- Use message.tags for the dynamic Bootstrap class -->
-    <div class="alert {{ message.tags }} alert-dismissible shadow fade show" role="alert">
-      <div>{{ message|safe }}</div>
-      <!-- For Bootstrap 5, use 'btn-close' and 'data-bs-dismiss' -->
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
-</div>
+    <!-- WELCOME -->
+    <section class="mb-5">
+        <div class="p-4 bg-light rounded-4 shadow-sm">
+            <h3 class="fw-bold">Welcome back, {{ request.user.username|title }} 👋</h3>
+            <p class="text-muted mb-0">Here’s your academic performance overview.</p>
+        </div>
+    </section>
 
 
+    <!-- STATS SECTION -->
+    <section class="mb-5">
+        <div class="row g-4">
 
-<h3 class="fw-bold mb-4 text-secondary">Welcome, {{ request.user.username |title}}</h3>
+            <div class="col-6 col-lg-3">
+                <div class="card rounded-4 border-0 shadow-sm text-center p-4 h-100">
+                    <h2 class="fw-bold">{{ courses_count }}</h2>
+                    <small class="text-muted">Courses Enrolled</small>
+                </div>
+            </div>
 
-<div class="row g-4">
+            <div class="col-6 col-lg-3">
+                <div class="card rounded-4 border-0 shadow-sm text-center p-4 h-100">
+                    <h2 class="fw-bold">{{ lessons_completed }}</h2>
+                    <small class="text-muted">Lessons Completed</small>
+                </div>
+            </div>
 
-    <div class="col-md-3">
-        <div class="card text-center shadow-sm">
-            <div class="card-body">
-                <h2>{{ courses_count }}</h2>
-                <p class="text-muted">Courses Enrolled</p>
+            <div class="col-6 col-lg-3">
+                <div class="card rounded-4 border-0 shadow-sm text-center p-4 h-100">
+                    <h2 class="fw-bold">{{ quizzes_taken }}</h2>
+                    <small class="text-muted">Quizzes Taken</small>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <div class="card rounded-4 border-0 shadow-sm text-center p-4 bg-success text-white h-100">
+                    <h2 class="fw-bold">{{ overall_progress }}%</h2>
+                    <small>Overall Progress</small>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- MY COURSES -->
+    <section class="mb-5 p-4 rounded-4 shadow-sm" style="background:#f8f9fa;">
+        <h4 class="fw-bold mb-4">📚 My Courses</h4>
+
+        {% for course in enrolled_courses %}
+        <div class="card rounded-4 border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold mb-1">{{ course.title }}</h5>
+                        <span class="badge bg-primary">Enrolled</span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'courses:course_quiz_page' course.id %}"
+                           class="btn btn-outline-success btn-sm">Quiz</a>
+
+                        <a href="{% url 'courses:first_lesson_detail' course.slug course.id %}"
+                           class="btn btn-primary btn-sm">Continue</a>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row g-3">
+                    {% for lesson in popular_lessons|get_item:course.id|slice:":3" %}
+                    <div class="col-md-4">
+                        <div class="card rounded-4 border-0 shadow-sm h-100">
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="fw-semibold">{{ lesson.title }}</h6>
+                                <small class="text-muted mb-3">{{ lesson.views }} views</small>
+
+                                <a href="{% url 'courses:lesson_detail' lesson.course.slug lesson.course.id lesson.id %}"
+                                   class="btn btn-outline-primary btn-sm mt-auto">
+                                    Open Lesson
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No lessons available.</p>
+                    {% endfor %}
+                </div>
+
             </div>
         </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card text-center shadow-sm">
-            <div class="card-body">
-                <h2>{{ lessons_completed }}</h2>
-                <p class="text-muted">Lessons Completed</p>
-            </div>
+        {% empty %}
+        <div class="text-center py-5">
+            <p class="text-muted">You are not enrolled in any courses yet.</p>
+            <a href="{% url 'courses:enroll_courses' %}" class="btn btn-primary">Browse Courses</a>
         </div>
-    </div>
+        {% endfor %}
+    </section>
 
-    <div class="col-md-3">
-        <div class="card text-center shadow-sm">
-            <div class="card-body">
-                <h2>{{ quizzes_taken }}</h2>
-                <p class="text-muted">Quizzes Taken</p>
+
+    <!-- CLASSROOMS -->
+    <section class="mb-5 p-4 rounded-4 shadow-sm" style="background:#eef2ff;">
+        <h4 class="fw-bold mb-4">🏫 Classrooms</h4>
+
+        <div class="row g-4">
+            {% for classroom in classrooms %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card rounded-4 border-0 shadow h-100">
+                    <div class="card-body d-flex flex-column p-4">
+
+                        <h5 class="fw-bold">{{ classroom.title }}</h5>
+                        <p class="text-muted small flex-grow-1">
+                            {{ classroom.description|truncatewords:20 }}
+                        </p>
+
+                        {% if classroom.members.all|contains_approved:request.user %}
+                            <div class="d-grid gap-2">
+                                {% if classroom.live_stream_url %}
+                                <a href="{{ classroom.live_stream_url }}"
+                                   target="_blank"
+                                   class="btn btn-warning btn-sm">
+                                   Join Live
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'courses:classroom_chat' classroom.id %}"
+                                   class="btn btn-primary btn-sm">
+                                   Open Chat
+                                </a>
+                            </div>
+                        {% else %}
+                            <a href="{% url 'courses:join_classroom' classroom.id %}"
+                               class="btn btn-success btn-sm mt-auto">
+                               Request Access
+                            </a>
+                        {% endif %}
+
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h2>{{ overall_progress }}%</h2>
-                <p>Overall Progress</p>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<hr class="my-4">
-
-
-<h5 class="fw-bold mb-3">My Courses</h5>
-
-{% for course in enrolled_courses %}
-<div class="card mb-4 shadow-sm">
-    <div class="card-body">
-
-        <h6 class="fw-bold">
-            {{ course.title }}
-            <span class="badge bg-primary ms-2">Enrolled</span>
-        </h6>
-
-        <p class="small text-muted">Popular lessons</p>
-
-        <ul class="list-group list-group-flush">
-            {% for lesson in popular_lessons|get_item:course.id %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ lesson.title }}
-                <span class="badge bg-secondary">
-                    {{ lesson.views }} views
-                </span>
-            </li>
             {% empty %}
-            <li class="list-group-item text-muted">
-                No lessons yet.
-            </li>
+            <p class="text-muted">No classrooms available.</p>
             {% endfor %}
-        </ul>
-
-        <a href=" {% if lesson %}{% url 'courses:lesson_detail' course.slug course.id lesson.id %}{% else %} {% url 'courses:first_lesson_detail' course.slug course.id %}{% endif %}"
-           class="btn btn-sm btn-outline-primary mt-3 {% if popular_lessons|get_item:course.id|length == 0 %}disabled{% endif %}">
-            Continue Learning
-        </a>
-
-    </div>
-</div>
-{% empty %}
-<p class="text-muted">You are not enrolled in any course yet.</p>
-<a href="{%url 'courses:enroll_courses' %}" class="btn btn-outline-primary">Enroll in a Course</a>
-{% endfor %}
-
-<h4 class="mb-3">Available Classrooms</h4>
-
-<div class="row">
-{% for classroom in classrooms %}
-<div class="col-md-6 col-lg-4 mb-4">
-  <div class="card shadow-sm h-100">
-    <div class="card-body d-flex flex-column">
-      <h5 class="card-title">{{ classroom.title }}</h5>
-      <p class="text-truncate">{{ classroom.description }}</p>
-
-      {% if not classroom.members.all|contains_approved:request.user  %}
-        <span class="badge bg-warning mb-2">Pending Approval</span>
-      {% elif not classroom.members.all|contains:request.user %}
-        <a href="{% url 'courses:join_classroom' classroom.id %}" class="btn btn-success btn-sm mb-2">Request Join</a>
-      {% endif %}
-
-      {% if classroom.live_stream_url and classroom.members.all|contains_approved:request.user %}
-        <a href="{{ classroom.live_stream_url }}" target="_blank" class="btn btn-warning btn-sm mt-auto">Join Live</a>
-      {% endif %}
-      {% if classroom.members.all|contains_approved:request.user %}
-        <a href="{% url 'courses:classroom_chat' classroom.id %}" class="btn btn-primary btn-sm mt-auto">Open Chat</a>
-        {% endif %}
-    </div>
-  </div>
-</div>
-{% empty %}
-<p>No classrooms available.</p>
-{% endfor %}
-</div>
+        </div>
+    </section>
 
 
-<h5 class="fw-bold mb-3">Enroll in a Course</h5>
+    <!-- ENROLL SECTION (Independent Scroll Container) -->
+    <section class="p-4 rounded-4 shadow-sm" style="background:#f1fdf6;">
+        <h4 class="fw-bold mb-4">🚀 Enroll in a Course</h4>
 
-<div class="row g-3 mb-4">
-    {% for course in available_courses %}
-    <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body">
-                <h6 class="fw-bold">{{ course.title }}</h6>
-                <p class="small text-muted">{{ course.level }}</p>
+        <div style="max-height:400px; overflow-y:auto;">
+            <div class="row g-4">
+                {% for course in available_courses %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card rounded-4 border-0 shadow-sm h-100">
+                        <div class="card-body d-flex flex-column p-4">
+                            <h6 class="fw-bold">{{ course.title }}</h6>
+                            <small class="text-muted mb-3">{{ course.level }}</small>
 
-                <a href="{% url 'courses:enroll_course' course.id %}"
-                   class="btn btn-sm btn-success w-100">
-                    <i class="fas fa-plus"></i> Enroll
+                            <a href="{% url 'courses:enroll_course' course.id %}"
+                               class="btn btn-success mt-auto">
+                               Enroll Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">You are enrolled in all available courses.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+
+    <!-- DANGER ZONE -->
+    <section class="mt-5">
+        <div class="card border-danger rounded-4 shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="text-danger fw-bold">Danger Zone</h5>
+                <p class="text-muted">
+                    Deleting your account permanently removes all academic progress.
+                </p>
+                <a href="{% url 'account_delete' %}" class="btn btn-danger">
+                    Delete Account
                 </a>
             </div>
         </div>
-    </div>
-    {% empty %}
-    <p class="text-muted">You are enrolled in all available courses.</p>
-    {% endfor %}
-</div>
+    </section>
 
-<!-- Delete account -->
-<div class="card border-danger mb-4">
-    <div class="card-body">
-        <h5 class="card-title text-danger">Danger Zone</h5>
-        <p class="card-text">Permanently delete your account and all associated data.</p>
-        <a href="{% url 'account_delete' %}" class="btn btn-danger">
-            <i class="fas fa-trash-alt"></i> Delete Account
-        </a>
-    </div>
 </div>
-
 {% endblock %}
 
 
 {% block extra_js %}
-
 <script>
 socket.onmessage = function(e){
     const data = JSON.parse(e.data);
-
     if(data.type === "live_notification"){
-        showToast(data.message);   // bootstrap toast popup
+        showToast(data.message);
     }
 }
-
 </script>
 {% endblock %}

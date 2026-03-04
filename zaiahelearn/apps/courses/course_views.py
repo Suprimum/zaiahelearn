@@ -1,12 +1,15 @@
 
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
-from .models import Course, Lesson, LessonProgress, Enrollment, Video, PDFResource, Purchase
+from .models import Course, Lesson, LessonProgress, Enrollment, Video, PDFResource
 from django.utils import timezone
 from .forms import LessonForm, VideoForm, PDFResourceForm
 from .utils import render_lesson_content, teacher_required, student_required, user_has_access
 from django.contrib import messages
 from django.db.models import Q
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
 
 
 
@@ -55,11 +58,6 @@ def complete_lesson(request, lesson_id):
     progress.save()
 
 
-# views.py
-from django.contrib.contenttypes.models import ContentType
-from .models import Course, Lesson, Purchase
-from .utils import user_has_access
-
 
 @login_required
 @student_required
@@ -77,7 +75,7 @@ def lesson_detail(request, slug, course_id, lesson_id=None):
         course=course,
         status="published"
     ).order_by("created_at")
-
+    
     videos = lesson.video_lessons.all()
     resources = course.resources.all()
 
@@ -85,7 +83,7 @@ def lesson_detail(request, slug, course_id, lesson_id=None):
 
     # ---------- Track lesson views ----------
     lesson_progress = None
-    if lesson.is_published():
+    if lesson.is_published:
         lesson.views += 1
         lesson.save(update_fields=["views"])
 
@@ -110,7 +108,7 @@ def lesson_detail(request, slug, course_id, lesson_id=None):
         "course": course,
         "cur_lesson": lesson,
         "lessons": lessons,
-        "lesson_content": render_lesson_content(lesson) or "Content coming soon...",
+        "lesson_content": lesson.render_blocks_to_html() or "Content coming soon...",
         "enrolled_courses": enroll_courses,
         "lesson_progress": lesson_progress,
         "saved_percent": lesson_progress.progress_percent if lesson_progress else 0,
@@ -128,28 +126,152 @@ def lesson_detail(request, slug, course_id, lesson_id=None):
 
 
 @login_required
-@student_required
-def next_lesson(request,slug,course_id,lesson_id):
-    try:
-        next_l = Lesson.objects.get(id=lesson_id+1)
-        return lesson_detail(request,slug,course_id,next_l.id)
-    except:
-        next_l = Lesson.objects.first()
-        return lesson_detail(request,slug,course_id,next_l.id)
+@require_POST
+def save_lesson_progress(request, lesson_id):
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+
+    data = request.POST
     
+    percent = float(data.get("percent", 0))
+    scroll_position = float(data.get("scroll", 0))
+
+    progress, created = LessonProgress.objects.get_or_create(
+        user=request.user,
+        lesson=lesson
+    )
+
+    print ('progress data: ',data)
+
+    progress.progress_percent = percent
+    progress.last_scroll_position = scroll_position
+
+    # Auto mark completed at 90%
+    if percent >= 90 and not progress.completed:
+        progress.completed = True
+        progress.completed_at = timezone.now()
+
+    progress.save(update_fields=[
+        "progress_percent",
+        "last_scroll_position",
+        "completed",
+        "completed_at",
+        "updated_at"
+    ])
+
+    return JsonResponse({"status": "success"})
+
 
 @login_required
 @student_required
-def prev_lesson(request,slug,course_id,lesson_id):
+@require_POST
+def next_prev_lesson(request, lesson_id):
+
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+    course = lesson.course
+
+    # ---- SAVE PROGRESS FIRST ----
+    percent = float(request.POST.get("percent", 0))
+    scroll = float(request.POST.get("scroll", 0))
+    # ---- FIND NEXT/PREV LESSON BY ORDER (NOT ID!) ----
+    direction = int(request.POST.get("direction", 1))
+
+    progress, _ = LessonProgress.objects.get_or_create(
+        user=request.user,
+        lesson=lesson
+    )
+    progress.progress_percent = percent
+    progress.last_scroll_position = scroll
+
+    if percent >= 90 and not progress.completed:
+        progress.completed = True
+        progress.completed_at = timezone.now()
+
+    progress.save()
+
+    lessons = Lesson.objects.filter(
+        course=course, 
+        status="published"
+    ).order_by("created_at")
+
+    lesson_list = list(lessons)
+
     try:
-        prev_l = Lesson.objects.get(id=lesson_id-1)
-        return lesson_detail(request,slug,course_id,prev_l.id)
-    except:
-        prev_l = Lesson.objects.last()
-        return lesson_detail(request,slug,course_id,prev_l.id)
+        index = lesson_list.index(lesson)
+    except ValueError:
+        index = 0
+
+    if direction == 1:
+        new_index = min(index + 1, len(lesson_list) - 1)
+    else:
+        new_index = max(index - 1, 0)
+
+    target = lesson_list[new_index]
+
+    next_url = reverse(
+        "courses:lesson_detail",
+        args=[course.slug, course.id, target.id]
+    )
+
+    return JsonResponse({
+        "status": "ok",
+        "url": next_url
+    })
+
+
+@login_required
+@require_POST
+def reset_lesson_progress(request, lesson_id):
+
+    progress = LessonProgress.objects.get(
+        user=request.user,
+        lesson=Lesson.objects.get(id=lesson_id)
+    )
+    progress.progress_percent = 0
+    progress.last_scroll_position = 0
+    progress.completed = False
+    progress.completed_at = None
+    progress.save()
+
+    print ('Lesson progress reset for user:', request.user.username, 'lesson_id:', lesson_id)
+
+    return JsonResponse({"status": "reset"})
 
 
 
+
+@login_required
+@teacher_required
+def course_detail(request,course_id):
+    course = Course.objects.get(id=course_id)
+    lessons = course.lessons.all()
+
+    context = {
+        "course": course,
+        "lessons": lessons,
+    }
+
+    return render(
+        request,
+        'teacher/course_detail.html',
+        context
+    )
+
+@login_required
+@teacher_required
+def course_quiz_list(request,course_slug,course_id):
+    course = get_object_or_404(Course,id=course_id,slug=course_slug)
+    quizzes = course.course_quizzes.all()
+
+    context = {
+        'course':course,
+        'quizzes': quizzes
+    }
+
+    return render(
+        request,
+        'courses/course_quiz_list.html',
+        context
+        )
 
 def course_list(request):
     query = request.GET.get("q", "")
@@ -183,24 +305,44 @@ def delete_lesson(request, lesson_id):
     return redirect("courses:lesson_edit", lesson_id=lesson.id)
 
 
-
 @login_required
 @teacher_required
 def lesson_editor(request, lesson_id=None):
-    lesson = get_object_or_404(Lesson, id=lesson_id) if lesson_id else None
 
-    form = LessonForm(request.POST or None, instance=lesson)
+    if lesson_id:
+        lesson = get_object_or_404(
+            Lesson,
+            id=lesson_id,
+            author=request.user
+        )
+    else:
+        lesson = None
 
-    if form.is_valid():
-        lesson = form.save(commit=False)
-        lesson.author = request.user
-        lesson.save()
-        return redirect('courses:teacher_dashboard')
+    if request.method == "POST":
+        form = LessonForm(request.POST, instance=lesson)
 
-    return render(request, 'teacher/lesson_editor.html', {
-        'form': form,
-        'lesson': lesson
-    })
+        if form.is_valid():
+            print ("Form is valid. Saving lesson...",form.cleaned_data)
+            lesson = form.save(commit=False)
+            lesson.author = request.user
+            lesson.save()
+
+            return redirect(
+                'courses:course_detail',
+                course_id=lesson.course.id
+            )
+    else:
+        form = LessonForm(instance=lesson)
+
+    return render(
+        request,
+        "teacher/lesson_editor.html",
+        {
+            "form": form,
+            "lesson": lesson,
+            "existing_blocks": lesson.content_blocks if lesson else []
+        }
+    )
 
 
 @login_required
@@ -291,13 +433,6 @@ def lesson_video_delete(request, lesson_id, video_id):
 
 
 
-
-@login_required
-def ai_lesson_quiz(request, lesson_id):
-    lesson = get_object_or_404(Lesson, id=lesson_id)
-
-    # later you plug AI generator here
-    return render(request,"courses/ai_quiz_loading.html",{"lesson":lesson})
 
 
 

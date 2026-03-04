@@ -2,7 +2,8 @@ from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import User
 from embed_video.fields import EmbedVideoField
-import uuid
+from django.utils.html import escape
+from django.utils.safestring import mark_safe
 from decimal import Decimal
 
 from django.conf import settings
@@ -62,38 +63,177 @@ class Course(models.Model):
 
 
 class Lesson(models.Model):
+
     STATUS_CHOICES = [
         ('draft', 'Draft'),
         ('published', 'Published'),
     ]
 
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')
+    course = models.ForeignKey("Course", on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=200)
 
-    content_html = models.TextField(blank=True)
-    content_markdown = models.TextField(blank=True)
+    # 🔥 SOURCE OF TRUTH
+    content_blocks = models.JSONField(default=list, blank=True)
 
-    status = models.CharField(
-        max_length=10,
-        choices=STATUS_CHOICES,
-        default='draft'
-    )
+    # 🔥 Cached Rendered HTML
+    content_html = models.TextField(blank=True, editable=False)
+
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
 
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_published = models.BooleanField(default=False)
 
     views = models.PositiveIntegerField(default=0)
 
-    def is_published(self):
-        return self.status == 'published'
+    # -----------------------------------
+    # RENDER ENGINE
+    # -----------------------------------
+    def render_blocks_to_html(self):
+
+        html = []
+        exercise_count = 1
+
+        for block in self.content_blocks:
+            t = block.get("type")
+            content = escape(block.get("content", "")).replace("\n", "<br>")
+            title = escape(block.get("title", ""))
+            styles = " ".join(block.get("styles", []))
+
+            if t == "title":
+                html.append(f'<h2 class="lesson-title {styles}">{content}</h2>')
+
+            elif t == "subtitle":
+                html.append(f'<h4 class="lesson-subtitle {styles}">{content}</h4>')
+
+            elif t == "text":
+                html.append(f'<p class="{styles}">{content}</p>')
+            
+            elif t == "tip":
+                html.append(f'<div class="lesson-tip hint {styles}">{content}</div>')
+
+            elif t == "theorem":
+                html.append(f'''
+                        <div class="card alert-secondary mb-3"> ">
+                            <div class="card-header h4">{title}</div>
+                            <div class="card-body {styles}">{content}</div>
+                        </div>''')
+            
+            elif t == "definition":
+                html.append(f'''
+                        <div class="card alert-primary mb-3">
+                            <div class="card-header h4">{title}</div>
+                            <div class="card-body {styles}">{content}</div>
+                        </div>''')
+
+            elif t == "info":
+                html.append(f'''
+                    <div class="key-point {styles} mb-3">
+                        {f"<strong>{title}</strong><br>" if title else ""}
+                        {content}
+                    </div>
+                ''')
+
+            elif t == "exercise":
+                html.append(f'''
+                    <div class="lesson-exercise {styles} example-box card mb-3">
+                        <div class="card-header example-header">Exercise {exercise_count}</div>
+                        {f"<strong>{title}</strong><br>" if title else ""}
+                        <div class="card-body example-body">
+                        {content}
+                        </div>
+                    </div>
+                ''')
+                exercise_count += 1
+
+            elif t == "example":
+                html.append(f'''
+                    <div class="example-box {styles} card mb-3">
+                        <div class="card-header example-header example-easy">{title}</div>
+                        <div class="card-body example-body">
+                            {content}
+                        </div>
+                    </div>
+                ''')
+            elif t == "olist":
+                items = block.get("content", []).split('\n')
+                html.append(f'''
+                    <ol class="{styles} mb-3">
+                        {''.join(f"<li>{escape(item)}</li>" for item in items)}
+                    </ol>
+                ''')
+            elif t == "ulist":
+                items = block.get("content", []).split('\n')
+                html.append(f'''
+                    <ul class="{styles} mb-3">
+                        {''.join(f"<li>{escape(item)}</li>" for item in items)}
+                    </ul>
+                ''')
+            elif t == "table":
+                th = block.get("content",[]).split('\n')[0].split(',')
+                rows = [r.split(',') for r in block.get("content",[]).split('\n')[1:]]
+                html.append(f'''
+                    <table class="{styles} mb-3">
+                        <thead><tr>
+                            {''.join(f"<th>{escape(header)}</th>" for header in th)}
+                        </tr></thead>
+                        <tbody>
+                        {''.join(f"<tr>{''.join(f'<td>{escape(cell)}</td>' for cell in row)}</tr>" for row in rows)}
+                        </tbody>
+                    </table>
+                ''')
+
+            elif t == "link":
+                url = escape(block.get("url", "#"))
+                html.append(f'<a href="{url}" class="{styles} mb-3">{content}</a>')
+            
+            elif t == "image":
+                url = escape(block.get("content", ""))
+                alt = escape(block.get("title", ""))
+                html.append(f'<img src="{url}" alt="{alt}" class="{styles} mb-3"/>')
+
+            elif t == "latex":
+                html.append(f'<div class="math-block {styles}">{content}</div>')
+
+            elif t == "collapse":
+                html.append(f'''
+                    <div class="collapse-block {styles} mb-3">
+                        <button class="btn btn-outline-secondary btn-sm mb-2 px-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{exercise_count}" aria-expanded="false" aria-controls="collapse{exercise_count}">
+                            {title or "Details"}
+                        </button>
+                        <div class="collapse" id="collapse{exercise_count}">
+                            <div class="card card-body">
+                                {content}
+                            </div>
+                        </div>
+                    </div>
+                ''')
+                exercise_count += 1
+            
+            elif t == "warning":
+                html.append(f'''
+                    <div class="alert alert-warning {styles} mb-3" role="alert">
+                        {f"<strong>{title}</strong><br>" if title else ""}
+                        {content}
+                    </div>
+                ''')
+            
+            else:
+                html.append(f'<p class="{styles}">{content}</p>')
+
+        return "".join(html)
+
+    def save(self, *args, **kwargs):
+        self.content_html = self.render_blocks_to_html()
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse('courses:lesson_detail',
+                       args=(self.course.slug, self.course.id, self.id))
 
     def __str__(self):
         return self.title
-    
-    def get_absolute_url(self):
-        return reverse('courses:lesson_detail',args=(self.course.slug,self.course.id,self.id))
-
 
 
 class LessonProgress(models.Model):
@@ -101,7 +241,7 @@ class LessonProgress(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
 
     progress_percent = models.FloatField(default=0)
-    last_scroll_position = models.IntegerField(default=0)
+    last_scroll_position = models.FloatField(default=0.0)
 
     completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -118,7 +258,18 @@ class LessonProgress(models.Model):
 
 class Quiz(models.Model):
     lesson = models.ForeignKey(
-        Lesson, on_delete=models.CASCADE, related_name="quizzes"
+        Lesson, 
+        on_delete=models.CASCADE, 
+        related_name="quizzes",
+        null=True,
+        blank=True
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='course_quizzes',
+        null=True,
+        blank=True
     )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
@@ -128,7 +279,9 @@ class Quiz(models.Model):
     )
     pass_score = models.PositiveIntegerField(default=50)
     is_published = models.BooleanField(default=False)
+    is_course_quiz = models.BooleanField(default=False)
     attempts = models.PositiveIntegerField(default=1)
+    level = models.CharField(default='O-Level')
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -136,9 +289,14 @@ class Quiz(models.Model):
         return f"{self.title}-{self.description}-{self.time_limit}-{self.pass_score}"
     
 
-class Question(models.Model):
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
 
+class Question(models.Model):
+    LEVEL_CHOICES = [
+        ('O-Level', 'O-Level'),
+        ('A-Level', 'A-Level'),
+    ]
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
+    level = models.CharField(choices=LEVEL_CHOICES,default='O-Level')
     content_html = models.TextField(blank=True)
     content_markdown = models.TextField(blank=True)
     correct_choice = models.CharField(max_length=1,null=True,blank=True)
@@ -147,7 +305,10 @@ class Question(models.Model):
         choices=[("easy","Easy"),("medium","Medium"),("hard","Hard")],
         default="medium"
     )
+    is_ai_generated = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
+    contains_math = models.BooleanField(default=False)
+    contains_diagram = models.BooleanField(default=False)
 
     def get_choice_answer(self, letter):
         choice = self.choices.filter(choice=letter).first()
@@ -157,10 +318,17 @@ class Question(models.Model):
         return f"{self.content_html}"
 
 
+
 class QuestionBank(models.Model):
+    LEVEL_CHOICES = [
+        ('O-Level', 'O-Level'),
+        ('A-Level', 'A-Level'),
+    ]
     teacher = models.ForeignKey(User, on_delete=models.CASCADE)
-    lesson = models.ForeignKey(Lesson,on_delete=models.CASCADE,related_name='bank', null=True)
+    lesson = models.ForeignKey(Lesson,on_delete=models.CASCADE,related_name='bank', null=True, blank=True)
+    course = models.ForeignKey(Course,on_delete=models.CASCADE,related_name='course_qb',null=True,blank=True)
     question = models.ForeignKey(Question,on_delete=models.CASCADE,related_name='question_bank',null=True)
+    level = models.CharField(choices=LEVEL_CHOICES,default='O-Level')
     
     difficulty = models.CharField(
         max_length=20,
@@ -170,7 +338,8 @@ class QuestionBank(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.lesson.title}"
+        return f"{self.lesson.title if self.lesson else self.course.title} - {self.question.content_html[:30]}..."
+
 
 
 class Choice(models.Model):
@@ -185,9 +354,32 @@ class Choice(models.Model):
         return f"{self.choice}: {self.answer}"
     
 
+
+
+
+
+class AIQuiz(models.Model):
+    lesson = models.ForeignKey("Lesson",on_delete=models.CASCADE,related_name="lesson_ai_quiz",null=True)
+    course = models.ForeignKey(Course,on_delete=models.CASCADE,related_name="course_ai_quiz",null=True)
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    # 🔒 PAYMENT FIELDS
+    price = models.PositiveIntegerField(default=250)
+    is_paid = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"AI Quiz for {self.lesson}"
+
+
+
+
+
+
+
 class LessonQuizAttempt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,related_name='user_quiz_attempt')
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE,null=True)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE,null=True,related_name='quiz_attempts')
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE,null=True)
 
     questions = models.JSONField(null=True)
@@ -260,6 +452,8 @@ class ClassroomFile(models.Model):
     file = models.FileField(upload_to="classroom_files/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
+
+
 class ClassroomMessage(models.Model):
     classroom_id = models.IntegerField()
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -281,12 +475,6 @@ class ClassroomMessage(models.Model):
     def __str__(self):
         return f"{self.sender.username}: {self.message[:20]}"
 
-
-
-class Subscription(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    active = models.BooleanField(default=False)
-    stripe_customer_id = models.CharField(max_length=255)
 
 
 
@@ -439,38 +627,3 @@ class Purchase(models.Model):
 
 
 
-
-
-
-class AIQuiz(models.Model):
-    lesson = models.ForeignKey("Lesson",on_delete=models.CASCADE)
-    user = models.ForeignKey(User,on_delete=models.CASCADE)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    # 🔒 PAYMENT FIELDS
-    price = models.PositiveIntegerField(default=250)
-    is_paid = models.BooleanField(default=True)
-
-    def __str__(self):
-        return f"AI Quiz for {self.lesson}"
-
-
-class AIQuizQuestion(models.Model):
-    quiz = models.ForeignKey(AIQuiz, on_delete=models.CASCADE, related_name="questions")
-    question_text = models.TextField()
-    option_a = models.CharField(max_length=255)
-    option_b = models.CharField(max_length=255)
-    option_c = models.CharField(max_length=255)
-    option_d = models.CharField(max_length=255)
-    correct_answer = models.CharField(max_length=1)  # A/B/C/D
-
-'''
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    bio = models.TextField(blank=True)
-    profile_picture = models.ImageField(upload_to='profiles/', blank=True)
-    courses = models.ManyToManyField(Course, related_name='enrolled_users', blank=True)
-
-    def __str__(self):
-        return self.user.username
-'''

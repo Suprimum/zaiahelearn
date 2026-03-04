@@ -4,7 +4,7 @@
 {% block hero-section %}
 <section class="hero-section text-white text-center">
     <div class="container">
-        <h1 class="display-5 fw-bold">Your Lessons</h1>
+        <h1 class="display-5 fw-bold">Your Dashboard</h1>
         <p class="lead mt-2">Manage notes, videos, PDFs, and quizzes in one place.</p>
     </div>
 </section>
@@ -38,11 +38,11 @@
     <!-- HEADER BAR -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h3 class="fw-bold mb-0">My Lessons</h3>
-            <small class="text-muted">Create and manage lesson content</small>
+            <h3 class="fw-bold mb-0">My Role</h3>
+            <small class="text-muted">Teacher</small>
         </div>
 
-        <a href="{% url 'courses:lesson_create' %}" class="btn btn-success shadow-sm">
+        <a href="{% url 'courses:lesson_create' %}" class="btn btn-success shadow-sm px-4" style="margin-right: 18%;">
             ➕ New Lesson
         </a>
          <!-- PDF VIEW BUTTON -->
@@ -69,8 +69,7 @@
 
 <hr>
 
-
-    {% if lessons %}
+    {% if courses %}
     <div class="card shadow-sm border-0">
         <div class="table-responsive">
 
@@ -78,90 +77,40 @@
 
                 <thead class="table-light">
                     <tr>
-                        <th>Lesson</th>
                         <th>Course</th>
-                        <th>Status</th>
-                        <th>Updated</th>
-                        <th>Resources</th>
+                        <th>Number of Lessons</th>
+                        <th>Number of Quizzes</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
-
                 <tbody>
-                    {% for lesson in lessons %}
+                    {% for course_id, course in courses %}
                     <tr>
-
-                        <!-- LESSON -->
-                        <td>
-                            <div class="fw-semibold">{{ lesson.title }}</div>
-                            <small class="text-muted">ID: {{ lesson.id }}</small>
-                        </td>
-
                         <!-- COURSE -->
-                        <td>{{ lesson.course }}</td>
+                        <td>{{ course.title }}</td>
 
-                        <!-- STATUS -->
+                        <!-- LESSONS -->
                         <td>
-                            <span class="badge 
-                                {% if lesson.status == 'published' %}
-                                    bg-success
-                                {% else %}
-                                    bg-secondary
-                                {% endif %}
-                            ">
-                                {{ lesson.status|capfirst }}
+                            <span class="badge bg-secondary">
+                                {{ course.lessons.count }}
                             </span>
                         </td>
 
-                        <!-- UPDATED -->
-                        <td class="small text-muted">
-                            {{ lesson.updated_at|date:"M d, Y" }}
-                        </td>
-
-                        <!-- RESOURCES -->
+                        <!--    QUIZZEZ -->
                         <td>
-
-                            <!-- QUIZZES -->
-                            {% if lesson.quizzes.exists %}
-                                <span class="badge bg-primary">
-                                    {{ lesson.quizzes.count }} Quiz{{ lesson.quizzes.count|pluralize }}
-                                </span>
-                            {% endif %}
-
-                            <!-- PDF -->
-                            {% if lesson.pdf_file %}
-                                <span class="badge bg-danger">PDF</span>
-                            {% endif %}
-
-                            <!-- VIDEO -->
-                            {% if lesson.video_lessons.exists %}
-                                <span class="badge bg-info text-dark">
-                                    {{ lesson.video_lessons.count }} Video{{ lesson.video_lessons.count|pluralize }}
-                                </span>
-                            {% endif %}
-
+                            <span class="badge bg-secondary">
+                                {{ course.course_quizzes.count }}
+                            </span>
                         </td>
-
                         <!-- ACTIONS -->
                         <td class="text-end">
 
                             <div class="btn-group btn-group-sm">
 
-                                <a href="{% url 'courses:lesson_edit' lesson.id %}"
-                                   class="btn btn-outline-primary">
-                                   Edit
+                                <a href="{% url 'courses:course_detail' course.id %}"
+                                   class="btn btn-outline-primary px-4">
+                                   Details
                                 </a>
-
-                                <a href="{% url 'courses:lesson_videos_list' lesson.id %}"
-                                   class="btn btn-outline-secondary">
-                                   Videos
-                                </a>
-
-                                <a href="{% url 'courses:lesson_quiz_list' lesson.id %}"
-                                   class="btn btn-outline-success">
-                                   Quizzes
-                                </a>
-
                                
                             </div>
 
@@ -182,8 +131,8 @@
     <div class="card shadow-sm border-0 text-center py-5">
         <div class="card-body">
 
-            <h5 class="fw-bold">No lessons created yet</h5>
-            <p class="text-muted">Start by creating your first lesson.</p>
+            <h5 class="fw-bold">No Courses created yet</h5>
+            <p class="text-muted">Start by creating your first Course.</p>
 
             <a href="{% url 'courses:lesson_create' %}"
                class="btn btn-success mt-2">

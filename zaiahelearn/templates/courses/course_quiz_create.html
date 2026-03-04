@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+
+
+{% block hero-section %}
+    <section class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">
+                {% if quiz %} ✏️ Edit Course Quiz {% else %} ➕ Create Course Quiz {% endif %}
+            </h1>
+            <p class="lead mt-3">
+                {% if quiz %}
+                    Update the questions and settings for your quiz.
+                {% else %}
+                    Start by filling out the details for your new quiz.
+                {% endif %}
+            </p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="margin-top:-7.1vh;">
+        <div class="container-fluid"> 
+            <a class="navbar-brand" href="#">ZaiaheLearn</a> 
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"></span> 
+            </button> 
+            <div class="collapse navbar-collapse" id="navbarNav"> 
+                <ul class="navbar-nav ms-auto"> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'home' %}">Home</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url 'courses:teacher_dashboard' %}">Dashboard</a> 
+                    </li> 
+                    <li class="nav-item"> 
+                        <a class="nav-link text-danger" href="{% url 'account_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div> 
+        </div>
+    </nav>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="mb-4 d-flex justify-content-between">
+    <a class="btn btn-outline-secondary shadow-sm" 
+      href="{% url 'courses:teacher_dashboard' %}">
+       ← Back to dashboard
+    </a>
+  </div>
+  
+<div class="container py-5">
+
+<div class="card shadow-sm p-4">
+
+<h4 class="fw-bold mb-3">
+Create Course Quiz — {{ course.title }}
+</h4>
+
+<form method="post">
+{% csrf_token %}
+
+<div class="mb-3">
+<label class="form-label">Quiz Title</label>
+<input type="text" name="title" class="form-control">
+</div>
+
+<div class="mb-3">
+<label class="form-label">Description</label>
+<textarea name="description" class="form-control"></textarea>
+</div>
+
+<div class="row">
+<div class="col-md-4">
+<label class="form-label">Time Limit (min)</label>
+<input type="number" name="time_limit" class="form-control" value="10">
+</div>
+
+<div class="col-md-4">
+<label class="form-label">Pass Score (%)</label>
+<input type="number" name="pass_score" class="form-control" value="50">
+</div>
+</div>
+
+<hr>
+
+<h6 class="fw-bold">Quiz Creation Method</h6>
+
+<div class="form-check">
+<input class="form-check-input" type="radio" name="mode" value="manual" checked>
+<label class="form-check-label">Manual Builder</label>
+</div>
+
+<div class="form-check">
+<input class="form-check-input" type="radio" name="mode" value="bank">
+<label class="form-check-label">Generate from Question Bank</label>
+</div>
+
+{% if request.user.is_superuser %}
+<div class="form-check">
+<input class="form-check-input" type="radio" name="mode" value="ai">
+<label class="form-check-label">Generate with AI</label>
+</div>
+{% endif %}
+
+<hr>
+
+<!-- BANK OPTIONS -->
+<div class="row">
+
+    <div class="col-md-4">
+        <label>Difficulty</label>
+        <select name="difficulty" class="form-select">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+    </div>
+
+    <div class="col-md-4">
+        <label>Number of Questions</label>
+        <input type="number" name="amount" class="form-control" value="10">
+    </div>
+
+    <div class="col-md-4">
+        <label>Level</label>
+        <select name="level" class="form-select">
+            {% for level in course.LEVEL_CHOICES %}
+                <option value="{{level.0}}">{{level.1}}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+</div>
+
+
+<hr>
+
+<!-- AI OPTIONS 
+<div class="mb-3">
+<label>AI Topic</label>
+<input type="text" name="topic" class="form-control"
+placeholder="e.g. Trigonometry, Calculus">
+</div>
+-->
+
+<button class="btn btn-primary w-100">
+Create Quiz
+</button>
+
+</form>
+
+</div>
+</div>
+{% endblock %}

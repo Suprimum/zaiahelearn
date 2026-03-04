@@ -39,6 +39,52 @@
 {% endblock %}
 
 
+
+
+{% block extra_css %}
+<style>
+  /* ===============================
+   MATHJAX OVERFLOW FIX
+================================ */
+
+/* Prevent container overflow */
+mjx-container {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: block;
+}
+
+/* Remove unwanted scrollbars */
+mjx-container[jax="SVG"] {
+  overflow-x: visible !important;
+}
+
+/* Inline math should not break layout */
+mjx-container[display="inline"] {
+  display: inline-block !important;
+  vertical-align: middle;
+  overflow: visible !important;
+}
+
+/* Display math spacing */
+mjx-container[display="true"] {
+  margin: 1rem 0;
+  text-align: center;
+}
+
+/* Mobile scaling */
+@media (max-width: 576px) {
+  mjx-container[jax="SVG"] {
+    font-size: 90%;
+  }
+}
+</style>
+{% endblock %}
+
+
+
+
 {% block content %}
 <div class="container px-lg-5 py-4">
 
@@ -48,10 +94,17 @@
       <p class="text-muted mb-0 mt-2">Quiz Title: <b>{{ quiz.title|title }}</b></p>
     </div>
 
-    <a href="{% url 'courses:lesson_quiz_list' quiz.lesson.id %}"
-       class="btn btn-outline-secondary">
-      ← Back
-    </a>
+    {% if quiz.lesson %}
+      <a href="{% url 'courses:lesson_quiz_list' quiz.lesson.id %}"
+        class="btn btn-outline-secondary">
+        ← Back
+      </a>
+      {% elif quiz.course %}
+      <a href="{% url 'courses:course_quiz_list' quiz.course.slug quiz.course.id %}"
+        class="btn btn-outline-secondary">
+        ← Back
+      </a>
+    {% endif %}
   </div>
 
   {% for question in quiz.questions.all %}
@@ -92,4 +145,47 @@
   {% endfor %}
 
 </div>
+{% endblock %}
+
+
+
+{% block extra_js %}
+
+<!-- ===============================
+     ADVANCED MATHJAX CONFIG
+================================ -->
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [
+      ['$', '$'],
+      ['\\(', '\\)']
+    ],
+    displayMath: [
+      ['$$', '$$'],
+      ['\\[', '\\]']
+    ],
+    processEscapes: true,
+    processEnvironments: true,
+    tags: "ams",              // enables equation numbering
+    packages: {'[+]': ['ams', 'noerrors', 'noundefined']}
+  },
+
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+  },
+
+  svg: {
+    fontCache: 'global',
+    scale: 1,
+    minScale: .5
+  },
+
+  startup: {
+    typeset: true
+  }
+};
+</script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 {% endblock %}

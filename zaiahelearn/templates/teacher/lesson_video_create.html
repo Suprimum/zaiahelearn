@@ -44,6 +44,8 @@
           {{ form.video_url.errors }}
         </div>
 
+        {% if request.user.is_superuser %}
+        <!-- Associated Lesson (Admin Only) -->   
         <!-- PRICE -->
         <div class="mb-3">
           <label class="form-label fw-semibold">Price</label>
@@ -53,6 +55,7 @@
           </div>
           {{ form.price.errors }}
         </div>
+        {% endif %}
 
         <!-- Description -->
         <div class="mb-4">

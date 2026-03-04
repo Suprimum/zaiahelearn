@@ -1,14 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Course, Lesson, LessonProgress, AIQuiz, PDFResource, Purchase, Video, Classroom, ClassroomMember, ClassroomFile
+from .models import (
+            Course, Lesson, LessonProgress,
+            AIQuiz, PDFResource, Purchase,
+            Video, Classroom, ClassroomMember,
+            ClassroomFile
+        )
 from .forms import  ContactForm, ClassroomForm
 from .utils import  teacher_required, generate_quiz_with_ai
 from django.contrib import messages
-
-from .lesson_quiz_views import *
-from .account_views import *
-from .course_views import *
-
 
 
 from django.http import JsonResponse
@@ -19,9 +19,15 @@ from django.core.mail import send_mail
 from django.contrib.contenttypes.models import ContentType
 
 
-
 import requests, json
 from django.conf import settings
+from django.db.models import Sum
+
+from .lesson_quiz_views import *
+from .account_views import *
+from .course_views import *
+
+
 
 
 
@@ -155,37 +161,7 @@ def view_ai_quiz(request, quiz_id):
 
 
 
-
-@login_required
-@require_POST
-def save_lesson_progress(request, lesson_id):
-    lesson = get_object_or_404(Lesson, id=lesson_id)
-
-    data = request.POST
     
-    percent = float(data.get("percent", 0))
-    scroll_position = int(data.get("scroll", 0))
-
-    progress, created = LessonProgress.objects.get_or_create(
-        user=request.user,
-        lesson=lesson
-    )
-
-    print ('progress data: ',data)
-
-    progress.progress_percent = percent
-    progress.last_scroll_position = scroll_position
-
-    # Auto mark completed at 90%
-    if percent >= 90 and not progress.completed:
-        progress.completed = True
-        progress.completed_at = timezone.now()
-
-    progress.save()
-
-    return JsonResponse({"status": "success"})
-
-
 
 
 
@@ -219,10 +195,14 @@ def contact_us(request):
 def teacher_dashboard(request):
     lessons = Lesson.objects.filter(author=request.user).order_by('-updated_at')
     classrooms = Classroom.objects.filter(teacher=request.user)
+
+    if lessons:
+        courses = (Course.objects.in_bulk(set(lessons.values_list('course',flat=True)))).items()
     
     context = {
         'lessons': lessons,
-        'classrooms': classrooms
+        'classrooms': classrooms,
+        'courses': courses
     }
 
     return render(request, 'teacher/teacher_dashboard.html', context)
@@ -317,19 +297,6 @@ def upload_class_file(request, room_id):
 
 
 @login_required
-@require_POST
-def reset_lesson_progress(request, lesson_id):
-    #data = json.loads(request.body)
-
-    LessonProgress.objects.filter(
-        user=request.user,
-        lesson_id=int(lesson_id)
-    ).update(progress_percent=0, last_scroll_position=0)
-
-    return JsonResponse({"status": "reset"})
-
-
-@login_required
 @student_required
 def student_dashboard(request):
     courses = Course.objects.all()  # later: filter enrolled
@@ -354,13 +321,24 @@ def student_dashboard(request):
 
     completed_count = completed_lessons.count()
 
+
     available_courses = Course.objects.exclude(
         enrollment__user=request.user
     )
 
     overall_progress = 0
     if total_lessons > 0:
-        overall_progress = round((completed_count / total_lessons) * 100, 1)
+        overall_progress = LessonProgress.objects.filter(
+            user=request.user,
+            completed=True
+        ).aggregate(
+            progress=Sum("progress_percent")
+        )["progress"] 
+
+        if overall_progress is None:
+            overall_progress = 0
+        else:
+            overall_progress = round(overall_progress / total_lessons, 1)
 
     popular_lessons = {
         str(course.id): Lesson.objects.filter(course=course)
@@ -383,7 +361,7 @@ def student_dashboard(request):
         "enrolled_courses": enrolled_courses,
         "available_courses": available_courses,
         "total_lessons": total_lessons,
-        "overall_progress": overall_progress,
+        "overall_progress": round(overall_progress,1),
         "popular_lessons": popular_lessons,
     }
 

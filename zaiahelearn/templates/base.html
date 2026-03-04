@@ -173,7 +173,7 @@ section {
                 </h6>
                 {% for c in al_courses %}
 
-                <a class="dropdown-item" href="{% url 'courses:first_lesson_detail' c.slug c.id %}">{{c.title}}</a>
+                <a class="dropdown-item {% if c.lessons.count == 0 %} disabled {% endif %}" href="{% url 'courses:first_lesson_detail' c.slug c.id %}">{{c.title}}</a>
 
                 {% empty %}
                 <p>No courses available yet</p>
@@ -235,6 +235,19 @@ section {
              <main class="flex-shrink-0" style="padding-top: 72px;"> 
                 <div class="container my-5"> 
                     {% block content %}
+
+                    
+<div class="container">
+    {% for message in messages %}
+    <!-- Use message.tags for the dynamic Bootstrap class -->
+    <div class="alert {{ message.tags }} alert-dismissible shadow fade show" role="alert">
+      <div>{{ message|safe }}</div>
+      <!-- For Bootstrap 5, use 'btn-close' and 'data-bs-dismiss' -->
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+
                     <section class="row align-items-center mb-5">
 
     <!-- Text -->

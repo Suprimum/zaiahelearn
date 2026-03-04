@@ -1,8 +1,7 @@
 from django import forms
 from .models import Lesson, TeacherApplication, ContactMessage, Quiz, Question, Teacher, Video, PDFResource, Classroom
 from allauth.account.forms import SignupForm
-
-
+import json
 
 
 
@@ -71,7 +70,7 @@ class VideoForm(forms.ModelForm):
 class QuizForm(forms.ModelForm):
     class Meta:
         model = Quiz
-        exclude = ('created_at','lesson')
+        exclude = ('created_at','lesson','course')
         widgets = {
             'title': forms.TextInput(attrs={
                 "class": "form-control",
@@ -83,6 +82,18 @@ class QuizForm(forms.ModelForm):
                 "placeholder": "Quiz instructions/description in rich-text format",
                 "required": False,
             }),
+            'pass_score':forms.NumberInput(attrs={
+                "class": "form-control"
+            }),
+            'time_limit':forms.NumberInput(attrs={
+                "class": "form-control"
+            }),
+            'attempts':forms.NumberInput(attrs={
+                "class": "form-control"
+            }),
+            'is_publishes':forms.CheckboxInput(attrs={
+                "class": "form-check-input"
+            })
 
         }
 
@@ -191,24 +202,40 @@ class LessonForm(forms.ModelForm):
         fields = [
             'course',
             'title',
-            'content_html',
-            'content_markdown',
+            'content_blocks',
             'status'
         ]
 
         widgets = {
-            'content_html': forms.Textarea(attrs={
-                'class': 'rich-editor form-control d-none',
-                'placeholder': 'Write lesson in HTML...',
-                'required': False,
+            'title': forms.TextInput(attrs={
+                'class': 'form-control'
             }),
-            'content_markdown': forms.Textarea(attrs={
-                'rows': 12,
-                'class': 'markdown-editor form-control',
-                'placeholder': 'Write lesson in Markdown...',
-                'required': False,
-            })
+            'course': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'content_blocks': forms.HiddenInput()
         }
+
+    
+    def clean_content_blocks(self):
+        data = self.cleaned_data.get("content_blocks")
+
+        if not data:
+            return []
+
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except json.JSONDecodeError:
+                raise forms.ValidationError("Invalid block JSON.")
+
+        if not isinstance(data, list):
+            raise forms.ValidationError("Blocks must be a list.")
+
+        return data
 
 
 

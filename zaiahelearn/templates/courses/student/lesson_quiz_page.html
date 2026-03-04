@@ -9,7 +9,7 @@
 <section class="hero-section text-white text-center">
     <div class="container">
         <h1 class="display-5 fw-bold">
-            📝 {{ lesson.title }} — Quizzes
+            📝 {% if lesson %} {{ lesson.title }} {% else %} {{course.title}} {% endif %} — Quizzes
         </h1>
         <p class="lead mt-3">
             Select a quiz to test your understanding
@@ -58,17 +58,25 @@
   <!-- Page Header -->
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
       <div>
-          <h3 class="fw-bold mb-1">{{ lesson.title }} Quizzes</h3>
+          <h3 class="fw-bold mb-1">{% if lesson %} {{ lesson.title }} {% else %} {{course.title}} {% endif %} Quizzes</h3>
           <p class="text-muted small mb-0">
               Attempt quizzes to measure your understanding.
           </p>
       </div>
 
       <!-- 🔙 Back Button (Desktop Visible) -->
-      <a href="{% url 'courses:lesson_detail' lesson.course.slug lesson.course.id lesson.id %}"
-         class="btn btn-outline-secondary btn-sm">
-         ← Back to Lesson
-      </a>
+       {% if lesson %} 
+            <a href="{% url 'courses:lesson_detail' lesson.course.slug lesson.course.id lesson.id %}"
+                class="btn btn-outline-secondary btn-sm">
+                ← Back to Lesson
+            </a>     
+       {% else %}
+            <a href="{% url 'courses:dashboard' %}"
+                class="btn btn-outline-secondary btn-sm">
+                ← Back to Dashboard
+            </a>
+        {% endif %}
+      
   </div>
 
   {% if quizzes %}
@@ -85,7 +93,10 @@
 
           <!-- Quiz Info -->
           <div class="small text-muted mb-3">
-            <div>⏱ {{ quiz.time_limit }} mins</div>
+            <div class="d-flex justify-content-between">
+                <div>⏱ {{ quiz.time_limit }} mins</div>
+                <div class="small text-muted mb-3">Attempts: {% with attempt_map|get_item:quiz.id as attempt %}{{ attempt.user_attempts|default:0 }}/{{ quiz.attempts }}{% endwith %}</div>
+            </div>
             <div>🎯 Pass: {{ quiz.pass_score }}%</div>
             <div>📚 {{ quiz.question_count }} Questions</div>
             
@@ -105,7 +116,7 @@
                   </span>
               {% endif %}
           {% else %}
-              <span class="badge bg-secondary mb-3">
+              <span class="badge bg-secondary mb-2 py-2">
                   Not Attempted
               </span>
 
@@ -144,7 +155,8 @@
 
   {% else %}
   <div class="alert alert-info text-center shadow-sm">
-    No quizzes available for this lesson yet.
+    No quizzes available for this 
+    {% if lesson %} lesson {% else %} course {% endif %} yet.
   </div>
   {% endif %}
 
