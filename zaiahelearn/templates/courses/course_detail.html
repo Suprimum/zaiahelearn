@@ -72,9 +72,8 @@ body{
 }
 
 .list-group-item{
-    border:none;
-    border-radius:8px;
-    margin-bottom:4px;
+    border-left:4px solid transparent;
+    transition:all .2s ease;
 }
 
 .list-group-item.active{
@@ -151,202 +150,161 @@ body{
     }
 }
 </style>
+
+
 <style>
+/* ===============================
+   LESSON RENDER ENGINE STYLING
+================================ */
 
-/* ---------- Layout ---------- */
-.course-navbar{ top:0; z-index:1030; }
-.sidebar-sticky{ top:80px; }
-.progress-bar{ transition:width .35s ease; }
-
-/* ---------- MathJax Fixes ---------- */
-.math-content mjx-container{
-    overflow-x: hidden !important;
-    overflow-y: hidden !important;
-}
-.math-content{
-    overflow-x:hidden;
+.lesson-renderer{
+    font-size:1.05rem;
+    line-height:1.8;
+    color:#212529;
 }
 
-/* Prevent horizontal scroll from equations */
-.math-content *{
-    max-width:100%;
+/* ---------- Titles ---------- */
+
+.lesson-title{
+    font-size:2rem;
+    font-weight:700;
+    color:#0d6efd;
+    margin-top:2rem;
 }
 
-/* Mobile spacing */
-@media(max-width:768px){
-    .hero-section{ padding:40px 0; }
-    .sidebar-sticky{ margin-top:0; }
-}
-
-.list-group-item.active{
-    background:#0d6efd !important;
-    color:white !important;
+.lesson-subtitle{
+    font-size:1.35rem;
     font-weight:600;
+    color:#495057;
+    margin-top:1.5rem;
+}
+
+/* ---------- Paragraph ---------- */
+
+.lesson-renderer p{
+    margin-bottom:1rem;
+}
+
+/* ---------- Definition ---------- */
+
+.lesson-renderer .card.alert-primary{
+    border-left:5px solid #0d6efd;
+    background:#eef5ff;
+}
+
+/* ---------- Theorem ---------- */
+
+.lesson-renderer .card.alert-secondary{
+    border-left:5px solid #6c757d;
+}
+
+/* ---------- Info block ---------- */
+
+.lesson-renderer .key-point{
+    background:linear-gradient(-150deg,  #54d7eb, #f3f3f5);
+    border-left:5px solid #2887a7;
+    padding:1rem;
+    border-radius:8px;
+}
+
+/* ---------- Exercise ---------- */
+
+
+.lesson-exercise{
+  border-left:6px solid #555;
+  background:#f5f5f5;
+}
+
+.lesson-exercise .card-header{
+    font-weight:700;
+    background:#eaf1e8;
+}
+
+/* ---------- Example ---------- */
+
+.example-box{
+    border-left:5px solid #0d6efd;
+}
+
+.lesson-example{
+  border-left:6px solid #198754;
+}
+
+.example-header{
+    font-weight:700;
+}
+
+/* ---------- Lists ---------- */
+
+
+/* ---------- Tables ---------- */
+
+.lesson-renderer table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.lesson-renderer th{
+    color:white;
+}
+
+.lesson-renderer th,
+.lesson-renderer td{
+    padding:.5rem;
+    border:1px solid #dee2e6;
+}
+
+/* ---------- Images ---------- */
+
+.lesson-renderer img{
+    max-width:100%;
+    border-radius:10px;
+}
+
+/* ---------- Collapse ---------- */
+
+.collapse-block button{
+    border-radius:20px;
+}
+
+/* ---------- Warning ---------- */
+
+.lesson-renderer .alert-warning{
     border-left:5px solid #ffc107;
 }
 
+.accordion-button, .accordion-body{
+    background: linear-gradient(210deg, hwb(161 46% 7%), #7a60e0);
+    font-weight: bolder;
+    color: white;
+    font-size: large;
+}
+
+/* ---------- Tip ---------- */
+
+.lesson-tip{
+    background:linear-gradient(-150deg,  #baa1e6, hwb(240 95% 4%));
+    border-left:5px solid #673ab7;
+    padding:1rem;
+    border-radius:8px;
+}
+
+/* ---------- Latex block ---------- */
+
+.math-block{
+    font-size:1.2rem;
+    padding:.5rem 0;
+}
+
+/* ---------- Spacing ---------- */
+
+.lesson-renderer > *{
+    margin-bottom:1rem;
+}
+
+
 </style>
 
-<style>
-/* -------------------- HEADINGS -------------------- */
-h1 {
-    font-size: 2.2rem;
-    font-weight: 700;
-    color: #0d6efd; /* Bootstrap primary */
-    margin-bottom: 0.5rem;
-}
-
-h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #343a40;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-}
-
-h4 {
-    font-size: 1.25rem;
-    font-weight: 500;
-    color: #495057;
-    margin-top: 1.5rem;
-    margin-bottom: 0.75rem;
-}
-
-/* -------------------- KEY POINTS / DEFINITIONS -------------------- */
-.key-point, .definition {
-    background-color: #e9f7ef;
-    border-left: 5px solid #28a745;
-    padding: 1rem 1.2rem;
-    margin: 1rem 0;
-    border-radius: 6px;
-    font-size: 1rem;
-    font-weight: 500;
-    color: #155724;
-}
-
-.definition {
-    background-color: #fff3cd;
-    border-left-color: #ffc107;
-    color: #856404;
-}
-
-/* -------------------- EXAMPLES -------------------- */
-.example-box {
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-}
-
-.example-header {
-    padding: 0.75rem 1rem;
-    font-weight: 700;
-    border-radius: 8px 8px 0 0;
-    color: #fff;
-}
-
-/* Difficulty level colors */
-.example-easy {
-    background-color: #198754; /* green */
-}
-
-.example-normal {
-    background-color: #0d6efd; /* blue */
-}
-
-.example-hard {
-    background-color: #fd7e14; /* orange */
-}
-
-.example-very-hard {
-    background-color: #dc3545; /* red */
-}
-
-.example-body {
-    padding: 1rem;
-    background-color: #f8f9fa;
-    border-radius: 0 0 8px 8px;
-    font-size: 1rem;
-}
-
-/* -------------------- HINTS -------------------- */
-.hint {
-    background-color: #e2e3ff;
-    border-left: 5px solid #6f42c1;
-    padding: 0.75rem 1rem;
-    margin: 1rem 0;
-    border-radius: 6px;
-    font-size: 0.95rem;
-    font-style: italic;
-    color: #383d7c;
-}
-
-/* -------------------- ALERTS -------------------- */
-.alert-primary {
-    background-color: #cff4fc;
-    border-left: 5px solid #0dcaf0;
-    padding: 0.8rem 1rem;
-    border-radius: 6px;
-}
-
-.alert-warning {
-    background-color: #fff3cd;
-    border-left: 5px solid #ffc107;
-    padding: 0.8rem 1rem;
-    border-radius: 6px;
-}
-
-.alert-secondary {
-    background-color: #e2e3e5;
-    border-left: 5px solid #6c757d;
-    padding: 0.8rem 1rem;
-    border-radius: 6px;
-}
-
-/* -------------------- MATH STEPS -------------------- */
-.math-step {
-    font-weight: 500;
-    font-style: italic;
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-/* -------------------- TABLES -------------------- */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-    font-size: 0.95rem;
-}
-
-table th, table td {
-    border: 1px solid #dee2e6;
-    padding: 0.5rem;
-    text-align: center;
-}
-
-thead {
-    background-color: #0d6efd;
-}
-
-tbody{
-    color: #212529;
-}
-
-/* -------------------- GRAPHS -------------------- */
-.graph-box {
-    overflow-x: auto;
-    margin: 1rem 0;
-}
-
-/* -------------------- RESPONSIVE -------------------- */
-@media (max-width: 768px) {
-    h1 { font-size: 1.8rem; }
-    h3 { font-size: 1.3rem; }
-    h4 { font-size: 1.1rem; }
-    .example-body { font-size: 0.95rem; }
-    .key-point, .definition, .hint { font-size: 0.9rem; }
-}
-</style>
 
 {% endblock %}
 
@@ -381,7 +339,7 @@ tbody{
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid px-lg-5 mt-3">
+<div class="container-fluid px-lg-5 mt-3 mb-3">
 
 <!-- ---------- TOP BAR ---------- -->
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -434,7 +392,7 @@ Reset Progress
 
 {% for l in lessons %}
 <a href="{% url 'courses:lesson_detail' course.slug course.id l.id %}"
-   class="list-group-item list-group-item-action small save-before-nav {% if l.id == cur_lesson.id %}active{% endif %}">
+   class="list-group-item list-group-item-action small save-before-nav p-2 {% if l.id == cur_lesson.id %}active text-white {% endif %}">
    {{l.title}}
 </a>
 {% endfor %}
@@ -490,8 +448,10 @@ Reset Progress
 <!-- LESSON TAB -->
 <div class="tab-pane fade show active" id="lessonTab">
 {% if lesson_content %}
-<div id="lessonContent" class="math-content">
-{{lesson_content|safe}}
+<div id="lessonContent" class="lesson-renderer math-content">
+
+{{ lesson_content|safe }}
+
 </div>
 {% else %}
 <div class="alert alert-light text-center">
@@ -738,6 +698,11 @@ No resources available for {{ course.title }}
   </div>
 </div>
 
+    <div class="d-flex justify-content-end me-5">
+        <p class="text-muted align-items-center">
+            Updated at: {{ cur_lesson.updated_at }} By: {{ cur_lesson.author|title }}
+        </p>
+    </div>
 {% endblock %}
 
 
@@ -747,6 +712,9 @@ No resources available for {{ course.title }}
 
 
 {% block extra_js %}
+
+
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 

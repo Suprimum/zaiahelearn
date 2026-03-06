@@ -1,184 +1,168 @@
 {% extends "base.html" %}
 
+
+
 {% block extra_css %}
 <style>
-  /* ===== LESSON BLOCKS GLOBAL ===== */
+
+/* ===================================
+GLOBAL LESSON TYPOGRAPHY
+=================================== */
 
 .lesson-title{
   font-size:2rem;
   font-weight:700;
-  margin:1rem 0;
+  margin:1.4rem 0 .6rem;
   border-bottom:3px solid #0d6efd;
-  padding-bottom:.3rem;
+  padding-bottom:.4rem;
 }
 
 .lesson-subtitle{
-  font-size:1.4rem;
+  font-size:1.35rem;
   font-weight:600;
-  margin:.8rem 0;
-  color:#555;
+  margin:1.2rem 0 .6rem;
+  color:#444;
+}
+
+/* ===================================
+LESSON BLOCKS
+=================================== */
+
+.lesson-example,
+.lesson-exercise,
+.lesson-warning,
+.lesson-tip,
+.lesson-keypoint,
+.lesson-theorem{
+  border-radius:10px;
+  padding:1rem 1.2rem;
+  margin:1rem 0;
+  box-shadow:0 4px 10px rgba(0,0,0,.05);
 }
 
 .lesson-example{
-  border-left:5px solid #198754;
+  border-left:6px solid #198754;
   background:#f1fff6;
-  padding:1rem;
-  margin:1rem 0;
 }
 
 .lesson-exercise{
-  border-left:5px solid #555;
-  background :#dcdcdcdf;
-  padding:1rem;
-  margin:1rem 0;
+  border-left:6px solid #555;
+  background:#f5f5f5;
 }
 
 .lesson-theorem{
-  border-left:5px solid #212529;
-  background: #eef5ff;
-  padding:1rem;
-  margin:1rem 0;
+  border-left:6px solid #0d6efd;
+  background:#eef5ff;
 }
 
 .lesson-warning{
-  border-left:5px solid #dc3545;
+  border-left:6px solid #dc3545;
   background:#fff5f5;
-  padding:1rem;
-  margin:1rem 0;
 }
 
 .lesson-tip{
-  border-left:5px solid #0dcaf0;
+  border-left:6px solid #0dcaf0;
   background:#f0fcff;
-  padding:1rem;
-  margin:1rem 0;
 }
 
 .lesson-keypoint{
-  border-left:5px solid #0d6efd;
-  background:#eef5ff;
-  padding:1rem;
-  margin:1rem 0;
+  border-left:6px solid #6f42c1;
+  background:#f4f1ff;
 }
 
-.lesson-toc ul{
-  list-style:none;
-  padding-left:0;
-}
-
-.lesson-toc li{
-  padding:.25rem 0;
-}
+/* ===================================
+MATH BLOCK
+=================================== */
 
 .math-block{
   overflow-x:auto;
   background:#f8f9fa;
   padding:1rem;
-  border-radius:.5rem;
+  border-radius:.6rem;
   margin:1rem 0;
 }
+
+/* ===================================
+TABLES
+=================================== */
 
 table{
   margin:1rem 0;
 }
 
+table td, table th{
+  padding:.5rem .75rem;
+}
+
+/* ===================================
+IMAGES
+=================================== */
+
 img{
   max-width:100%;
   height:auto;
+  border-radius:8px;
 }
 
- .rich-editor, .markdown-editor {
-    min-height: 300px;
-    border: 1px solid #ced4da;
-    border-radius: 0.375rem;
-    padding: 0.5rem;
-    background-color: #fff;
-    min-width: 100%;
-  }
-    
-  #livePreview {
-    min-height: 300px;
-    overflow-y: auto;
-  }
+/* ===================================
+EDITOR UI
+=================================== */
 
-#livePreview .card {
-  box-shadow: 0 .25rem .5rem rgba(0,0,0,.05);
+#blockWorkspace{
+  min-height:200px;
 }
 
-#livePreview h2.lesson-title {
-  font-size: 1.8rem;
-  font-weight: 700;
+#blockWorkspace .card{
+  border:1px solid #e6e6e6;
+  transition:.2s;
 }
 
-#livePreview .accordion-button {
-  font-weight: 600;
+#blockWorkspace .card:hover{
+  box-shadow:0 6px 14px rgba(0,0,0,.08);
 }
 
-  .ck-editor__editable {
-    min-height: 300px;
-    }
-    /* ===============================
-   MathJax Scrollbar Fix
-================================ */
+/* ===================================
+PREVIEW
+=================================== */
 
-/* Prevent MathJax SVG overflow */
-.mathjax-container,
-.math-content,
-#quizPreview {
-  overflow-x: hidden !important;
-}
-.toc-container ul {
-  list-style: none;
-  padding-left: 0;
+#livePreview{
+  min-height:300px;
+  overflow-y:auto;
 }
 
-.toc-container li {
-  padding: 4px 0;
+#livePreview .card{
+  box-shadow:0 .25rem .5rem rgba(0,0,0,.05);
 }
 
-.toc-container a {
-  text-decoration: none;
+/* ===================================
+MATHJAX FIXES
+=================================== */
+
+mjx-container{
+  overflow-x:auto !important;
+  overflow-y:hidden;
+  max-width:100%;
 }
 
-.toc-container a:hover {
-  text-decoration: underline;
+mjx-container[display="true"]{
+  margin:1rem 0;
 }
 
-/* MathJax SVG block fixes */
-mjx-container[jax="SVG"] {
-  overflow-x: auto;
-  overflow-y: hidden;
-  max-width: 100%;
-  display: block;
+/* mobile math scaling */
+
+@media (max-width:576px){
+
+mjx-container{
+  font-size:90%;
 }
 
-/* Inline math */
-mjx-container[jax="SVG"][display="inline"] {
-  display: inline-block !important;
-  vertical-align: middle;
-  overflow: visible !important;
-}
-
-/* Display math spacing */
-mjx-container[display="true"] {
-  margin: 1rem 0;
-}
-
-/* Prevent Bootstrap tab overflow */
-.tab-pane {
-  overflow-x: hidden;
-}
-
-/* Mobile safety */
-@media (max-width: 576px) {
-  mjx-container[jax="SVG"] {
-    font-size: 90%;
-  }
 }
 
 </style>
-
 {% endblock %}
+
+
+
 
 
 {% block hero-section %}
@@ -420,9 +404,8 @@ mjx-container[display="true"] {
 {% endblock %}
 
 {% block extra_js %}
-{# <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> #}
-{# <script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script> #}
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+
 
 
 <script>
@@ -768,20 +751,35 @@ function toggleStyle(index,style){
 /* =====================================
    PREVIEW + SYNC
 ===================================== */
-
 function updatePreview(){
 
-    hiddenField.value = JSON.stringify(blocks);
+hiddenField.value = JSON.stringify(blocks);
 
-    let html = "";
-    let exerciseCount = 1;
+let html = "";
+let exerciseCount = 1;
 
-    blocks.forEach(block=>{
-        html += renderHTML(block, exerciseCount);
-        if(block.type === "exercise") exerciseCount++;
-    });
+blocks.forEach(block=>{
+html += renderHTML(block,exerciseCount);
 
-    preview.innerHTML = html;
+if(block.type === "exercise"){
+exerciseCount++;
+}
+});
+
+preview.innerHTML = html;
+
+/* ===============================
+MATHJAX RE-RENDER
+================================ */
+
+if(window.MathJax){
+
+MathJax.typesetPromise([preview]).catch(err=>{
+console.error("MathJax typeset error:",err);
+});
+
+}
+
 }
 
 /* =====================================
@@ -822,20 +820,20 @@ function renderHTML(block, num){
 
         case "theorem":
             return `<div class="lesson-theorem ${styleClass}">
-                        ${block.title ? `<strong>${block.title}</strong><br>` : ""}
+                        ${block.title ? "<strong class='fw-bold text-decoration-underline'> " + block.title + "</strong><br>" : ""}
                         ${safe_content}
                     </div>`;
 
         case "exercise":
             return `<div class="lesson-exercise ${styleClass}">
                         <strong>Exercise ${num}</strong><br>
-                        ${block.title ? `<strong>${block.title}</strong><br>` : ""}
+                        ${block.title ? "<strong>" + block.title + "</strong><br>" : ""}
                         ${safe_content}
                     </div>`;
 
         case "example":
             return `<div class="lesson-example ${styleClass}">
-                        ${block.title ? `<strong>${block.title}</strong><br>` : ""}
+                        ${block.title ? "<strong>" + block.title + "</strong><br>" : ""}
                         ${safe_content}
                     </div>`;
         
@@ -864,13 +862,23 @@ function renderHTML(block, num){
               </ul>`;
 
         case "table":
-          return `<table class="table ${styleClass}">
-            ${block.content.split('\n')
-            .map(r=>`<tr>${
-              r.split(',')
-              .map(c=>`<td>${c.trim()}</td>`).join('')
-            }</tr>`).join('')}
-            </table>`;
+
+            const rows = block.content.split("\n");
+
+            let tableHTML = "<table class='table table-bordered "+styleClass+"'>";
+
+            rows.forEach((row,i)=>{
+                  const cols = row.split(",");
+                  tableHTML += "<tr>";
+                  cols.forEach(col=>{
+                    tableHTML += i === 0
+                    ? `<th>${col.trim()}</th>`
+                    : `<td>${col.trim()}</td>`;
+                  });
+              tableHTML += "</tr>";
+            });
+          tableHTML += "</table>";
+        return tableHTML;
 
         case "link":
           if(styleClass.includes("btn")){
@@ -896,21 +904,40 @@ function renderHTML(block, num){
               </div>`;
 
         case "collapse":
-            return `<div class="accordion ${styleClass}" id="accordion${block.id}">
-                <div class="accordion-item">
-                  <h2 class="accordion-header" id="heading${block.id}">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${block.id}">
-                      ${title}
-                    </button>
-                  </h2>
-                  <div id="collapse${block.id}" class="accordion-collapse collapse">
-                    <div class="accordion-body">
-                      ${block.content}
-                      ${safe_content}
-                    </div>
-                  </div>
-                </div>
-              </div>`;
+
+            return `
+                  <div class="accordion ${styleClass}" id="accordion${block.id}">
+
+                  <div class="accordion-item">
+
+                    <h2 class="accordion-header">
+
+                        <button class="accordion-button collapsed"
+                          type="button"
+                          data-bs-toggle="collapse"
+                          data-bs-target="#collapse${block.id}">
+
+                            ${block.title || "Section"}
+
+                                </button>
+
+                              </h2>
+
+                            <div id="collapse${block.id}"
+                              class="accordion-collapse collapse">
+
+                                <div class="accordion-body">
+
+                                    ${safe_content}
+
+                                    </div>
+
+                                    </div>
+
+                                </div>
+
+                       </div>
+                          `;
 
         
         case "warning":
@@ -920,9 +947,12 @@ function renderHTML(block, num){
                     </div>`;
 
         case "latex":
-            return `<div class="math-block ${cls}">
+
+          return `
+                <div class="math-block ${styleClass}">
                 \\[${block.content}\\]
-              </div>`;
+                </div>
+                `;
 
         default:
             return `<p class="${styleClass}">${safe_content}</p>`;

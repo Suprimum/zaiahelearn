@@ -104,67 +104,122 @@
 
     <!-- Courses -->
     <section class="mb-5">
-        <h4 class="fw-bold mb-4">My Courses</h4>
+        <h4 class="fw-bold mb-3">My Courses</h4>
 
-        {% for course in enrolled_courses %}
-        <div class="card mb-4 border-0 shadow rounded-4 hover-lift">
-            <div class="row g-0">
+<div class="d-flex align-items-center gap-2 mb-3">
 
-                <!-- Course Image -->
-                <div class="col-md-4">
-                    <img src="{{ course.image }}"
-                         class="img-fluid rounded-start h-100 object-fit-cover"
-                         loading="lazy">
-                </div>
+<button class="carousel-nav" onclick="scrollCourses(-400)">‹</button>
+<button class="carousel-nav" onclick="scrollCourses(400)">›</button>
 
-                <div class="col-md-8">
-                    <div class="card-body p-3 d-flex flex-column h-100">
+</div>
 
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h5 class="fw-bold">{{ course.title }}</h5>
-                                <span class="badge bg-primary">Enrolled</span>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <a href="{% url 'courses:course_quiz_page' course.id %}"
-                                   class="btn btn-outline-success btn-sm p-2" style="height:max-content;">Quiz</a>
-                                <a href="{% url 'courses:first_lesson_detail' course.slug course.id %}"
-                                   class="btn btn-primary btn-sm p-2" style="height: max-content;">Continue</a>
-                            </div>
-                        </div>
 
-                        <!-- Progress Bar -->
-                        <div class="mt-4">
-                            <div class="progress rounded-pill" style="height:10px;">
-                                <div class="progress-bar"
-                                     role="progressbar"
-                                     style="width: {{ course.lessons.all|course_progress:request.user|default:0 }}%">
-                                </div>
-                            </div>
-                            <small class="text-muted">
-                                {{ course.lessons.all|course_progress:request.user|default:0 }}% completed
-                            </small>
-                        </div>
+<div class="course-carousel" id="courseCarousel">
 
-                        <div class="mt-auto d-flex justify-content-end gap-2">
-                            <a href="{% url 'courses:unenroll_course' course.id %}" class="btn btn-danger btn-sm">
-                                Unenroll
-                            </a>
-                        </div>
+{% for course in enrolled_courses %}
 
-                    </div>
-                </div>
+{% with progress=course.lessons.all|course_progress:request.user|default:0 %}
 
-            </div>
-        </div>
-        {% empty %}
-        <div class="text-center py-5">
-            <p class="text-muted">You are not enrolled in any courses yet.</p>
-            <a href="{% url 'courses:enroll_courses' %}" class="btn btn-primary">
-                Browse Courses
-            </a>
-        </div>
-        {% endfor %}
+<div class="card course-card shadow-sm">
+
+<div class="position-relative">
+
+<img
+src="{{ course.image|default:'https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=1200' }}"
+class="w-100 course-image"
+loading="lazy">
+
+{% if progress == 100 %}
+<div class="course-complete">
+✔ Completed
+</div>
+{% endif %}
+
+</div>
+
+<div class="card-body">
+
+<h6 class="fw-bold mb-2">
+{{ course.title }}
+</h6>
+
+<!-- PROGRESS RING -->
+
+<div class="d-flex align-items-center gap-3 mb-3">
+
+<svg class="progress-ring" viewBox="0 0 36 36">
+
+<circle
+class="progress-bg"
+cx="18"
+cy="18"
+r="15">
+</circle>
+
+<circle
+class="progress-value"
+cx="18"
+cy="18"
+r="15"
+data-progress="{{ progress }}">
+</circle>
+
+<text
+x="50%"
+y="50%"
+text-anchor="middle"
+dy=".3em"
+class="progress-text">
+{{ progress }}%
+</text>
+
+</svg>
+
+<small class="text-muted">
+{{ progress }}% completed
+</small>
+
+</div>
+
+<div class="d-flex gap-2">
+
+<a href="{% url 'courses:first_lesson_detail' course.slug course.id %}"
+class="btn btn-primary btn-sm w-100">
+Continue
+</a>
+
+<a href="{% url 'courses:course_quiz_page' course.id %}"
+class="btn btn-outline-success btn-sm">
+Quiz
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+{% endwith %}
+{% empty %}
+
+<div class="text-center py-5 w-100">
+
+<h5 class="fw-bold">No enrolled courses</h5>
+
+<p class="text-muted">
+Start learning by enrolling in a course.
+</p>
+
+<a href="{% url 'courses:enroll_courses' %}"
+class="btn btn-primary">
+Browse Courses
+</a>
+
+</div>
+
+{% endfor %}
+
+</div>
     </section>
 
 
@@ -249,6 +304,101 @@
 .object-fit-cover {
     object-fit: cover;
 }
+
+
+/* ================= COURSE CAROUSEL ================= */
+
+.course-carousel{
+    display:flex;
+    gap:20px;
+    overflow-x:auto;
+    padding-bottom:10px;
+    scroll-behavior:smooth;
+}
+
+.course-carousel::-webkit-scrollbar{
+    height:8px;
+}
+
+.course-carousel::-webkit-scrollbar-thumb{
+    background:#ccc;
+    border-radius:20px;
+}
+
+.course-card{
+    min-width:320px;
+    max-width:320px;
+    flex-shrink:0;
+    border-radius:16px;
+    overflow:hidden;
+    transition:all .3s ease;
+}
+
+.course-card:hover{
+    transform:translateY(-6px);
+    box-shadow:0 18px 40px rgba(0,0,0,.12);
+}
+
+/* ================= IMAGE ================= */
+
+.course-image{
+    height:170px;
+    object-fit:cover;
+}
+
+/* ================= PROGRESS RING ================= */
+
+.progress-ring{
+    width:70px;
+    height:70px;
+}
+
+.progress-ring circle{
+    fill:none;
+    stroke-width:6;
+}
+
+.progress-bg{
+    stroke:#e9ecef;
+}
+
+.progress-value{
+    stroke:#28a745;
+    stroke-linecap:round;
+    transform:rotate(-90deg);
+    transform-origin:50% 50%;
+    transition:stroke-dashoffset 1s ease;
+}
+
+.progress-text{
+    font-size:12px;
+    font-weight:600;
+}
+
+/* ================= COMPLETION BADGE ================= */
+
+.course-complete{
+    position:absolute;
+    top:10px;
+    right:10px;
+    background:#28a745;
+    color:white;
+    font-size:12px;
+    padding:4px 8px;
+    border-radius:20px;
+}
+
+/* ================= SCROLL BUTTONS ================= */
+
+.carousel-nav{
+    cursor:pointer;
+    border:none;
+    background:white;
+    box-shadow:0 4px 10px rgba(0,0,0,.1);
+    width:36px;
+    height:36px;
+    border-radius:50%;
+}
 </style>
 {% endblock %}
 
@@ -297,6 +447,45 @@ function showToast(message){
     </div>`;
     document.body.insertAdjacentHTML('beforeend', toastHTML);
 }
+
+document.addEventListener("DOMContentLoaded", function(){
+
+/* ================= PROGRESS RING ================= */
+
+document.querySelectorAll(".progress-value").forEach(circle=>{
+
+const radius = circle.getAttribute("r");
+const circumference = 2 * Math.PI * radius;
+
+circle.style.strokeDasharray = circumference;
+
+const progress = circle.dataset.progress;
+
+const offset = circumference - (progress / 100) * circumference;
+
+circle.style.strokeDashoffset = circumference;
+
+setTimeout(()=>{
+circle.style.strokeDashoffset = offset;
+},200);
+
+});
+
+
+/* ================= CAROUSEL ================= */
+
+window.scrollCourses = function(distance){
+
+const container = document.getElementById("courseCarousel");
+
+container.scrollBy({
+left:distance,
+behavior:"smooth"
+});
+
+}
+
+});
 </script>
 {% endblock %}
 
