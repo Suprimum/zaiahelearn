@@ -188,10 +188,18 @@ class="btn btn-primary btn-sm w-100">
 Continue
 </a>
 
-<a href="{% url 'courses:course_quiz_page' course.id %}"
-class="btn btn-outline-success btn-sm">
-Quiz
+{% if course.course_quizzes.all %}
+    <a href="{% url 'courses:course_quiz_page' course.id %}"
+        class="btn btn-outline-danger btn-sm">
+        Exam
+    </a>
+{% endif %}
+
+<a href="{% url 'courses:course_quick_quiz_page' course.id %}"
+    class="btn btn-outline-success btn-sm">
+    Quick Quiz
 </a>
+
 
 </div>
 
@@ -222,7 +230,114 @@ Browse Courses
 </div>
     </section>
 
+    <!-- RECOMMENDED VIDEOS -->
+  <section class="mb-5">
 
+<h4 class="fw-bold mb-3">Recommended Videos</h4>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+<button class="carousel-nav" onclick="scrollVideos(-400)">‹</button>
+<button class="carousel-nav" onclick="scrollVideos(400)">›</button>
+</div>
+
+<div class="course-carousel" id="videoCarousel">
+
+{% for video in recommended_videos %}
+
+<div class="card course-card border-0 shadow rounded-4">
+
+<img src="{{ video.thumbnail_url }}"
+class="card-img-top course-image"
+loading="lazy"
+alt="{{ video.title }}">
+
+<div class="card-body p-3 d-flex flex-column">
+
+<h6 class="fw-bold">
+{{ video.title }}
+</h6>
+
+<p class="text-muted small flex-grow-1">
+{{ video.description|truncatewords:15 }}
+</p>
+
+<a href="{{ video.url }}"
+target="_blank"
+class="btn btn-outline-primary btn-sm mt-2">
+Watch Now
+</a>
+
+</div>
+
+</div>
+
+{% empty %}
+
+<p class="text-muted">No recommended videos available.</p>
+
+{% endfor %}
+
+</div>
+
+</section>
+
+    <!-- Popular Lessons -->
+    <section class="mb-5">
+
+<h4 class="fw-bold mb-3">Popular Lessons</h4>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+<button class="carousel-nav" onclick="scrollLessons(-400)">‹</button>
+<button class="carousel-nav" onclick="scrollLessons(400)">›</button>
+</div>
+
+<div class="course-carousel" id="lessonCarousel">
+
+{% for lesson in recommended_lessons %}
+
+<div class="card course-card border-0 shadow rounded-4">
+
+<img src="{{ lesson.course.image|default:'https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=1200' }}"
+class="card-img-top course-image"
+loading="lazy"
+alt="{{ lesson.title }}">
+
+<div class="card-body p-3 d-flex flex-column">
+
+<small class="text-muted">
+Course: {{ lesson.course.title }}
+</small>
+
+<h6 class="fw-bold">
+{{ lesson.title }}
+</h6>
+
+<small class="text-muted mb-2">
+Views: {{ lesson.views }}
+</small>
+
+<p class="text-muted small flex-grow-1">
+{{ lesson.description|truncatewords:15 }}
+</p>
+
+<a href="{% url 'courses:lesson_detail' lesson.course.slug lesson.course.id lesson.id %}"
+class="btn btn-outline-primary btn-sm mt-2">
+View Lesson
+</a>
+
+</div>
+
+</div>
+
+{% empty %}
+
+<p class="text-muted">No popular lessons available.</p>
+
+{% endfor %}
+
+</div>
+
+</section>
 
     <!-- Classrooms -->
     <section class="mb-5">
@@ -399,6 +514,15 @@ Browse Courses
     height:36px;
     border-radius:50%;
 }
+.course-carousel{
+scrollbar-width:none;
+}
+
+.course-carousel::-webkit-scrollbar{
+display:none;
+}
+
+
 </style>
 {% endblock %}
 
@@ -486,6 +610,33 @@ behavior:"smooth"
 }
 
 });
+
+/* ================= VIDEO CAROUSEL ================= */
+
+window.scrollVideos = function(distance){
+
+const container = document.getElementById("videoCarousel");
+
+container.scrollBy({
+left:distance,
+behavior:"smooth"
+});
+
+}
+
+
+/* ================= LESSON CAROUSEL ================= */
+
+window.scrollLessons = function(distance){
+
+const container = document.getElementById("lessonCarousel");
+
+container.scrollBy({
+left:distance,
+behavior:"smooth"
+});
+
+}
 </script>
 {% endblock %}
 

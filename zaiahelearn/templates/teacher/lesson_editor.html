@@ -158,6 +158,12 @@ mjx-container{
 
 }
 
+.desmos-graph{
+border-radius:10px;
+overflow:hidden;
+box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
 </style>
 {% endblock %}
 
@@ -262,6 +268,7 @@ mjx-container{
       <button type="button" class="btn btn-outline-dark btn-sm block-btn" data-type="theorem">Theorem</button>
       <button type="button" class="btn btn-outline-info btn-sm block-btn" data-type="definition">Definition</button>
       <button type="button" class="btn btn-outline-danger btn-sm block-btn" data-type="latex">LaTeX</button>
+      <button type="button" class="btn btn-outline-success btn-sm block-btn" data-type="desmos"> Desmos Graph</button>
       <button type="button" class="btn btn-outline-secondary btn-sm block-btn" data-type="collapse">Collapsible Section</button>
 
     </div>
@@ -407,7 +414,7 @@ mjx-container{
 
 
 
-
+<script src="https://www.desmos.com/api/v1.6/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
 <script>
  document.addEventListener("DOMContentLoaded", function(){
 
@@ -528,6 +535,7 @@ const blockHelp = {
   latex: "Math only e.g x^2 + y^2",
   collapse: "Collapsible title",
   definition: "Key term definition",
+  desmos: "Enter Desmos expression or JSON state. Example: y=x^2",
 };
 
 
@@ -748,6 +756,39 @@ function toggleStyle(index,style){
 }
 
 
+/* ==================================
+    DESMOS INITIALIZATION
+=====================================
+*/
+function initializeDesmosGraphs(){
+
+if(!window.Desmos) return;
+
+blocks.forEach(block => {
+
+if(block.type !== "desmos") return;
+
+const el = document.getElementById("desmos-" + block.id);
+if(!el) return;
+
+const calculator = Desmos.GraphingCalculator(el,{
+expressions:true,
+settingsMenu:false
+});
+
+const expressions = block.content.split("\n");
+
+expressions.forEach((expr,i)=>{
+calculator.setExpression({
+id:"expr"+i,
+latex:expr
+});
+});
+
+});
+
+}
+
 /* =====================================
    PREVIEW + SYNC
 ===================================== */
@@ -766,7 +807,9 @@ exerciseCount++;
 }
 });
 
+
 preview.innerHTML = html;
+initializeDesmosGraphs();
 
 /* ===============================
 MATHJAX RE-RENDER
@@ -903,6 +946,15 @@ function renderHTML(block, num){
                      alt="Lesson Image">
               </div>`;
 
+        case "desmos":
+            const graphId = "desmos-" + block.id;
+          return `
+              <div class="my-3 ${styleClass}">
+                      ${title}
+                  <div id="${graphId}" class="desmos-graph" style="width:100%;height:400px;"></div>
+              </div>
+              `;
+
         case "collapse":
 
             return `
@@ -953,6 +1005,7 @@ function renderHTML(block, num){
                 \\[${block.content}\\]
                 </div>
                 `;
+
 
         default:
             return `<p class="${styleClass}">${safe_content}</p>`;

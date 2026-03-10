@@ -116,6 +116,8 @@ mjx-container[display="true"] {
   <!-- QUIZ FORM -->
   <form method="post" id="quizForm">
     {% csrf_token %}
+    <input type="hidden" name="attempt_id" value="{{attempt.id}}">
+    <input type="hidden" name="random_quiz_id" value="{{quiz.id}}">
 
     {% for q in questions %}
         <div class="card shadow-sm mb-4 question-card">

@@ -112,6 +112,7 @@ def save_question(data,user,quiz,lesson=None,course=None,is_ai_generated=False):
     question_contents_html = data.getlist("question_content_html[]")
     correct_choices = data.getlist("correct_choice[]")
     difficulties = data.getlist("difficulty[]")
+    level = data.get("level")
 
     option_A = data.getlist("option_A[]")
     option_B = data.getlist("option_B[]")
@@ -128,6 +129,7 @@ def save_question(data,user,quiz,lesson=None,course=None,is_ai_generated=False):
                 content_html=content,
                 correct_choice=correct_choices[index],
                 order=index,
+                level=level,
                 difficulty = difficulties[index],
                 is_ai_generated = is_ai_generated,
         )
@@ -137,6 +139,7 @@ def save_question(data,user,quiz,lesson=None,course=None,is_ai_generated=False):
             teacher = user,
             lesson = lesson,
             course = course,
+            level = level,
             question = question,
             difficulty = difficulties[index],
         )

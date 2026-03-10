@@ -89,6 +89,9 @@ def admin_dashboard(request):
 
     return render(request, "admin/dashboard.html", context)
 
+    
+
+
 
 @login_required
 def start_payment(request, model_name, object_id):
@@ -194,9 +197,9 @@ def payment_verify(request):
     payment.save()
 
     # 🔥 AUTO GENERATE QUIZ
-    quiz = generate_quiz_with_ai(payment, request.user)
+    #quiz = generate_quiz_with_ai(payment, request.user)
 
-    return redirect("courses:view_ai_quiz", quiz.id)
+    return redirect("courses:view_ai_quiz")
 
 
 
@@ -293,6 +296,13 @@ def classroom_create(request):
 
     return render(request, "teacher/classroom_create.html", {"form": form})
 
+@login_required
+@teacher_required
+def classroom_delete(request, classroom_id):
+    classroom = get_object_or_404(Classroom, id=classroom_id, teacher=request.user)
+    classroom.is_active = False
+    classroom.save()
+    return redirect('courses:teacher_dashboard')
 
 
 @login_required
@@ -384,6 +394,12 @@ def student_dashboard(request):
         enrollment__user=request.user
     )
 
+    recommended_lessons = Lesson.objects.filter(course__in=enrolled_courses).order_by('-views')[:5]
+
+    recommended_videos = Video.objects.filter(
+        lesson__course__in=enrolled_courses
+    ).order_by('-views')[:5]   
+
     overall_progress = 0
     if total_lessons > 0:
         overall_progress = LessonProgress.objects.filter(
@@ -421,6 +437,8 @@ def student_dashboard(request):
         "total_lessons": total_lessons,
         "overall_progress": round(overall_progress,1),
         "popular_lessons": popular_lessons,
+        "recommended_lessons": recommended_lessons,
+        "recommended_videos": recommended_videos,
     }
 
     return render(request, "dashboard/profile.html", context)

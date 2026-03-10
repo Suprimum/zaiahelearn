@@ -1,6 +1,7 @@
+from aiohttp import request
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Lesson, Quiz, Question, LessonQuizAttempt, QuestionBank, Choice, AIQuiz, Course
+from .models import Lesson, Quiz, Question, LessonQuizAttempt, QuestionBank, Choice, Course
 from django.utils import timezone
 from .forms import QuizForm
 from .utils import teacher_required, save_question, student_required
@@ -8,7 +9,7 @@ from django.contrib import messages
 from django.db.models import Avg, Count, Q
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-
+from django.db import transaction
 from collections import Counter
 
 from zaiahelearn.ai.claude_exam_parser import claude_questions_image_parser
@@ -66,6 +67,163 @@ def quiz_page(request, lesson_id=None, course_id=None):
         "attempt_map": attempt_map,
     })
 
+
+
+@login_required
+@student_required
+def quick_quiz_page(request, lesson_id=None, course_id=None):
+    course = None
+    lesson = None
+
+    if course_id:
+        course = get_object_or_404(Course, id=course_id)
+    elif lesson_id:
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+    else:
+        messages.error(request, "Invalid quiz source.")
+        return redirect("dashboard")
+
+
+    if request.method == "POST" and request.POST.get("attempt_id",None) == None:
+
+        difficulty = request.POST.get("difficulty","medium")
+
+        try:
+            number_of_questions = int(request.POST.get("amount", 5))
+        except ValueError:
+            messages.error(request, "Invalid number of questions.")
+            return redirect(request.path)
+
+        if number_of_questions <= 0:
+            messages.error(request, "Number of questions must be greater than zero.")
+            return redirect(request.path)
+
+
+        # Fetch questions
+        if course:
+            if difficulty != 'mixed':
+                questions_qs = QuestionBank.objects.filter(course=course, difficulty=difficulty)
+            else:
+                questions_qs = QuestionBank.objects.filter(course=course)
+            title = f"Quick {course.title} Quiz"
+        else:
+            if difficulty != "mixed":
+                questions_qs = QuestionBank.objects.filter(lesson=lesson,difficulty=difficulty)
+            else:
+                questions_qs = QuestionBank.objects.filter(lesson=lesson)
+            title = f"Quick {lesson.title} Quiz"
+
+
+        total_available = questions_qs.count()
+
+        if total_available == 0:
+            messages.error(request, "No questions available for this quiz.")
+            return redirect(request.path)
+
+        if number_of_questions > total_available:
+            number_of_questions = total_available
+
+
+
+        # Random selection
+        questions = questions_qs.order_by("?")[:number_of_questions]
+        questions = list(map(lambda qb: qb.question, questions))  # Evaluate queryset to list for reuse
+
+
+        time_limit = max(5, number_of_questions * 1)
+        min_pass = ((number_of_questions/2)/number_of_questions)*100
+
+    
+        with transaction.atomic():
+
+            random_quiz = Quiz.objects.create(
+                course=course if course else None,
+                lesson=lesson if lesson else None,
+                is_published=True,
+                is_quick_quiz=True,
+                title=title,
+                time_limit=time_limit,
+                pass_score=min_pass
+            )
+
+            attempt = LessonQuizAttempt.objects.create(
+                user=request.user,
+                quiz=random_quiz,
+                total=len(questions)
+            )
+
+            random_quiz.attempt_id = attempt.id
+            random_quiz.save()
+
+            #save question ids in session for later retrieval during quiz submission
+            question_ids = [q.id for q in questions]
+            request.session[f"quiz{attempt.id}_questions"] = question_ids
+            request.session.modified = True
+
+
+        return render(request, "courses/quiz_attempt.html", {
+            "quiz": random_quiz,
+            "questions": questions,
+            "attempt": attempt,
+        })
+    
+    elif request.method == "POST" and request.POST.get("attempt_id",None) != None:
+
+        attempt_id = request.POST.get("attempt_id")
+        attempt = get_object_or_404(LessonQuizAttempt, id=attempt_id, user=request.user)
+        quiz = attempt.quiz
+
+        question_ids = request.session.get(f"quiz{attempt.id}_questions", [])
+        questions = Question.objects.filter(id__in=question_ids).prefetch_related("choices")
+
+        score = 0
+        answers = {}
+
+        for question in questions:
+            selected = request.POST.get(str(question.id))
+            answers[str(question.id)] = selected or None
+            
+            correct_choice = question.choices.filter(is_correct=True).first()
+            if correct_choice and selected == correct_choice.choice:
+                score += 1
+
+        attempt.score = score
+        attempt.answers = answers
+        attempt.completed_at = timezone.now()
+
+        #save question ids in jsonfield
+        attempt.question_ids = question_ids
+
+        # Calculate percentage safely
+        if attempt.total > 0:
+            percentage = (score / attempt.total) * 100
+        else:
+            percentage = 0
+
+        attempt.passed = percentage >= quiz.pass_score
+        attempt.save()
+
+        # Cleanup session
+        if f"quiz{attempt.id}_questions" in request.session:
+            del request.session[f"quiz{attempt.id}_questions"]
+            request.session.modified = True
+
+        print (f"Attempt Score: {attempt.score}, Answers: {attempt.answers}")
+
+        return redirect("courses:quiz_result", attempt.id)
+
+
+
+    questions_qs = QuestionBank.objects.filter(course=course) if course else QuestionBank.objects.filter(lesson=lesson)
+
+    context = {
+        "course": course,
+        "lesson": lesson,
+        "total_questions": questions_qs.count(),
+        "topics": Lesson.objects.filter(course=course) if course else Lesson.objects.filter(title=lesson.title),
+    }
+
+    return render(request, "courses/student/quick_quiz_page.html", context)
 
 
 
@@ -209,10 +367,13 @@ def quiz_add_from_bank(request, quiz_id):
         teacher=request.user
     )
 
+    courses = Course.objects.all()
+
     # Apply search filter
     difficulty = request.GET.get("difficulty")
     topic = request.GET.get("topic")
     level = request.GET.get("level")
+    course = request.GET.get("course")
     
     if difficulty:
         questions = questions.filter(difficulty=difficulty)
@@ -222,6 +383,9 @@ def quiz_add_from_bank(request, quiz_id):
     
     if level:
         questions = questions.filter(level=level)
+
+    if course:
+        questions = questions.filter(course=course)
 
     
     paginator = Paginator(questions, 12)
@@ -254,6 +418,7 @@ def quiz_add_from_bank(request, quiz_id):
         "quiz": quiz,
         "questions": questions,
         "page_obj": page_obj,
+        "courses": courses,
     })
 
 
@@ -386,7 +551,7 @@ def quiz_create_edit(request,course_id=None, lesson_id=None, quiz_id=None):
             elif course:
                 quiz.course = course
 
-            print(form.cleaned_data['level'],' fl-vs-ql ',quiz.level)
+            #print(form.cleaned_data['level'],' fl-vs-ql ',quiz.level)
             quiz.save()
 
             # 🔥 Clear old questions if editing
@@ -422,7 +587,6 @@ def quiz_create_edit(request,course_id=None, lesson_id=None, quiz_id=None):
         "lesson": lesson,
         "course": course,
         "quiz": quiz,
-        #"ai_quiz":ai_quiz,
         "form": form,
         "questions": questions,
     })
@@ -455,6 +619,11 @@ def quiz_delete(request, quiz_id):
 @login_required
 @student_required
 def quiz_attempt(request, quiz_id):
+
+    if not quiz_id:
+        messages.error(request, "Quiz ID is required.")
+        return redirect('courses:dashboard')
+    
     quiz = get_object_or_404(
         Quiz,
         id=quiz_id,
@@ -463,21 +632,22 @@ def quiz_attempt(request, quiz_id):
 
     questions = quiz.questions.prefetch_related("choices").all()
 
-    # 🔹 Get unfinished attempt (if exists)
-    attempt = LessonQuizAttempt.objects.filter(
-        user=request.user,
-        quiz=quiz,
-        completed_at__isnull=True
-    ).first()
-
-    # 🔹 If no active attempt, create one
-    if not attempt:
+    # student has attempted the quiz
+    if quiz.attempt_id:
+        attempt = LessonQuizAttempt.objects.get(
+            id=quiz.attempt_id,
+        )
+    # 🔹 student hasn't attempted the quiz
+    elif not quiz.attempt_id:
         attempt = LessonQuizAttempt.objects.create(
             user=request.user,
             quiz=quiz,
             lesson=quiz.lesson,   # if you still keep lesson field
             total=questions.count()
         )
+
+        quiz.attempt_id = attempt.id
+        quiz.save()
 
     # ========================
     # SUBMIT QUIZ
@@ -500,10 +670,7 @@ def quiz_attempt(request, quiz_id):
         attempt.answers = answers
         attempt.score = score
         attempt.completed_at = timezone.now()
-        attempt.user_attempts = LessonQuizAttempt.objects.filter(
-            user=request.user,
-            quiz=quiz
-        ).count() + 1  # current attempt included
+        attempt.user_attempts = LessonQuizAttempt.objects.filter(user=request.user,quiz=quiz,).count()+1
 
         # Calculate percentage safely
         if attempt.total > 0:
@@ -522,6 +689,7 @@ def quiz_attempt(request, quiz_id):
     # ========================
     # DISPLAY QUIZ
     # ========================
+
     return render(request, "courses/quiz_attempt.html", {
         "quiz": quiz,
         "questions": questions,
@@ -533,6 +701,7 @@ def quiz_attempt(request, quiz_id):
 
 
 @login_required
+@student_required
 def quiz_result(request, attempt_id):
     attempt = get_object_or_404(
         LessonQuizAttempt.objects.select_related("quiz", "user")
@@ -545,7 +714,11 @@ def quiz_result(request, attempt_id):
         raise PermissionDenied("You are not allowed to view this result.")
 
     quiz = attempt.quiz
-    questions = quiz.questions.prefetch_related("choices")
+    if attempt.question_ids:
+        questions = Question.objects.filter(id__in=attempt.question_ids).prefetch_related("choices")
+        print ('questions',questions)
+    else:
+        questions = quiz.questions.prefetch_related("choices")
 
     for q in questions:
         correct_choice = q.choices.filter(is_correct=True).first()
@@ -562,4 +735,5 @@ def quiz_result(request, attempt_id):
         "percentage": percentage,
     }
 
+    quiz.delete() #delete random quiz after attempt to prevent clutter
     return render(request, "courses/quiz_result.html", context)

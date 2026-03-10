@@ -196,6 +196,9 @@ class StudentSignupForm(SignupForm):
     
 
 
+
+
+
 class LessonForm(forms.ModelForm):
     class Meta:
         model = Lesson

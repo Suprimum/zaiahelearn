@@ -48,11 +48,15 @@
     </div>
 
     <div class="col-md-4">
-      <label class="fw-bold small">Topic</label>
-      <input type="text" name="topic"
-             value="{{ request.GET.topic }}"
-             class="form-control"
-             placeholder="Search topic...">
+      <label class="fw-bold small">Course</label>
+      <select class="form-select" name="course">
+        <option value="">All</option>
+        {% for c in courses %}
+        <option value="{{ c.id }}" {% if request.GET.course == c.id|stringformat:"s" %}selected{% endif %}>
+          {{ c.title }}
+        </option>
+        {% endfor %}
+      </select>
     </div>
 
     <div class="col-md-3">

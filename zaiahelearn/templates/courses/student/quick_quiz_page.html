@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block hero-section %}{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+  <div class="container-fluid">
+
+    <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+      ZaiaheLearn
+    </a>
+
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'home' %}">Home</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'courses:dashboard' %}">
+            Dashboard
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link text-danger" href="{% url 'account_logout' %}">
+            Logout
+          </a>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+
+<div class="container">
+    {% for message in messages %}
+    <!-- Use message.tags for the dynamic Bootstrap class -->
+    <div class="alert {{ message.tags }} alert-dismissible shadow fade show" role="alert">
+      <div>{{ message|safe }}</div>
+      <!-- For Bootstrap 5, use 'btn-close' and 'data-bs-dismiss' -->
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="container py-4">
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<h4 class="fw-bold mb-0">
+⚡ Quick Quiz Generator
+</h4>
+
+{% if course %}
+<a href="{% url 'courses:dashboard' %}"
+   class="btn btn-outline-secondary btn-sm">
+   ← Back to Course
+</a>
+{% endif %}
+
+{% if lesson %}
+<a href="{% url 'courses:lesson_detail' lesson.id %}"
+   class="btn btn-outline-secondary btn-sm">
+   ← Back to Lesson
+</a>
+{% endif %}
+
+</div>
+
+
+<div class="row justify-content-center">
+
+<div class="col-lg-7">
+
+<div class="card shadow-lg border-0">
+
+<div class="card-header bg-primary text-white">
+<h5 class="mb-0">Quiz Setup</h5>
+</div>
+
+<div class="card-body">
+
+{% if course %}
+<div class="alert alert-info">
+<strong>Course:</strong> {{course.title}}
+</div>
+{% endif %}
+
+{% if lesson %}
+<div class="alert alert-info">
+<strong>Lesson:</strong> {{lesson.title}}
+</div>
+{% endif %}
+
+<!-- Question Availability -->
+<div class="alert alert-secondary mb-4">
+📊 <strong>Available Questions:</strong>
+<span id="availableQuestions">{{ total_questions }}</span>
+</div>
+
+<form method="POST">
+
+{% csrf_token %}
+
+<!-- Question Count -->
+<div class="mb-3">
+
+<label class="form-label fw-bold">
+Number of Questions
+</label>
+
+<select name="amount" id="questionAmount" class="form-select">
+
+<option value="5">5 Questions</option>
+<option value="10">10 Questions</option>
+<option value="15">15 Questions</option>
+<option value="20">20 Questions</option>
+<option value="25">25 Questions</option>
+
+</select>
+
+</div>
+
+
+<!-- Difficulty Selector -->
+
+<div class="mb-3">
+
+<label class="form-label fw-bold">
+Difficulty
+</label>
+
+<select name="difficulty" class="form-select">
+
+<option value="">Mixed</option>
+<option value="easy">Easy</option>
+<option value="medium">Medium</option>
+<option value="hard">Hard</option>
+
+</select>
+
+</div>
+
+
+<!-- Topic Filter -->
+
+<div class="mb-4">
+
+<label class="form-label fw-bold">
+Topic
+</label>
+
+<select name="topic" class="form-select">
+
+<option value="">All Topics</option>
+
+{% for topic in topics %}
+<option value="{{topic.id}}">
+{{topic.name}}
+</option>
+{% endfor %}
+
+</select>
+
+</div>
+
+
+<!-- Estimated Time -->
+
+<div class="alert alert-warning">
+
+⏱ <strong>Estimated Time:</strong>
+<span id="estimatedTime">5</span> minutes
+
+</div>
+
+
+<!-- Quiz Rules -->
+
+<div class="alert alert-light border">
+
+<strong>Rules</strong>
+
+<ul class="mb-0">
+
+<li>Questions are randomly selected.</li>
+<li>You must score at least <b>50%</b> to pass.</li>
+<li>Quiz cannot be paused.</li>
+
+</ul>
+
+</div>
+
+
+<div class="d-grid mt-3">
+
+<button class="btn btn-success btn-lg">
+
+🚀 Start Quiz
+
+</button>
+
+</div>
+
+</form>
+
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+
+{% endblock %}
+
+
+
+{% block extra_js %}
+
+<script>
+
+const questionSelect = document.getElementById("questionAmount");
+const estimatedTime = document.getElementById("estimatedTime");
+
+function updateEstimatedTime(){
+
+    const q = parseInt(questionSelect.value);
+
+    /* 30 seconds per question */
+
+    const minutes = Math.ceil(q * 0.5);
+
+    estimatedTime.innerText = minutes;
+
+}
+
+questionSelect.addEventListener("change", updateEstimatedTime);
+
+updateEstimatedTime();
+
+</script>
+
+{% endblock %}

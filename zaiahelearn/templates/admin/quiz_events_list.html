@@ -1,0 +1,14 @@
+{% extends "admin/dashboard.html" %}
+
+
+
+{% block content %}
+
+    <ul>
+        {% for quiz in event_quizzes %}
+            <li><a>{{quiz.title}}</a></li>
+            {% empty %}
+        {% endfor %}
+    </ul>
+
+{% endblock %}

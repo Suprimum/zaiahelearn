@@ -281,13 +281,17 @@ class Quiz(models.Model):
     pass_score = models.PositiveIntegerField(default=50)
     is_published = models.BooleanField(default=False)
     is_course_quiz = models.BooleanField(default=False)
+    is_quick_quiz = models.BooleanField(default=False)
     attempts = models.PositiveIntegerField(default=1)
     level = models.CharField(default='O-Level')
+    attempt_id = models.PositiveIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.title}-{self.description}-{self.time_limit}-{self.pass_score}"
+    
+
     
 
 
@@ -356,9 +360,6 @@ class Choice(models.Model):
     
 
 
-
-
-
 class AIQuiz(models.Model):
     lesson = models.ForeignKey("Lesson",on_delete=models.CASCADE,related_name="lesson_ai_quiz",null=True)
     course = models.ForeignKey(Course,on_delete=models.CASCADE,related_name="course_ai_quiz",null=True)
@@ -381,7 +382,7 @@ class AIQuiz(models.Model):
 class LessonQuizAttempt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,related_name='user_quiz_attempt')
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE,null=True,related_name='quiz_attempts')
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE,null=True)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE,null=True,blank=True)
 
     questions = models.JSONField(null=True)
     answers = models.JSONField(null=True, blank=True)
@@ -391,6 +392,8 @@ class LessonQuizAttempt(models.Model):
 
     score = models.IntegerField(default=0)
     total = models.IntegerField(default=0)
+
+    question_ids = models.JSONField(null=True, blank=True)
 
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -541,6 +544,7 @@ class Video(models.Model):
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
     video_url = EmbedVideoField(verbose_name="Video URL", null=True)
+    views = models.PositiveIntegerField(default=0)
 
     # 🔒 PAYMENT FIELDS
     is_paid = models.BooleanField(default=False)

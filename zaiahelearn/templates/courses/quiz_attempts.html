@@ -45,10 +45,17 @@
             </p>
         </div>
 
-        <a href="{% url 'courses:lesson_quiz_list' quiz.lesson.id %}"
-           class="btn btn-outline-secondary">
-            ← Back to Quizzes
-        </a>
+        {% if quiz.lesson %}
+            <a href="{% url 'courses:lesson_quiz_list' quiz.lesson.id %}"
+                class="btn btn-outline-secondary">
+                ← Back to Quizzes
+            </a>
+        {% else %}
+            <a href="{% url 'courses:course_quiz_list' quiz.course.slug quiz.course.id %}"
+                class="btn btn-outline-secondary">
+                ← Back to Quizzes
+            </a>
+        {% endif %}
     </div>
 
 
